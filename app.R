@@ -1,6 +1,7 @@
 rm(list = ls())
 suppressPackageStartupMessages(library(shiny))
 library(shinyhelper)
+library(shinyjs)  
 suppressMessages(library(DT))
 library(readr)
 suppressMessages(library(dplyr))
@@ -13,11 +14,16 @@ library("shinyWidgets")
 #devtools::install_github("ricardo-bion/ggradar", dependencies = TRUE)
 library(ggradar)
 
+# Sankey diagram
+suppressMessages(library(viridis))
+suppressMessages(library(patchwork))
+suppressMessages(library(hrbrthemes))
+suppressMessages(library(circlize))
+suppressMessages(library(networkD3))
+suppressMessages(library(htmlwidgets))
 
 source("dragables.R")
 
-
-test<-FALSE
 
 ## Global
 data_dir <- "Data"
@@ -58,6 +64,7 @@ pred_format<-read.csv(file.path(data_dir,'pred_format.csv'),header=TRUE, strings
 pp<-unique(subset(pred_format,select=c(new,new_no,group)))
 pp<-pp[order(pp$new_no),]
 predPreyFormat<-pp$new
+pp_short<-filter(pp,new_no >=0) 
 
 recruitMode<-c('Determenistic','Stochastic')[1]
 
@@ -71,10 +78,15 @@ source("flop.control.r")
 OP<-read.FLOP.control(file="op_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other,n.pred=n.pred)
 OP.trigger<-read.FLOPtrigger.control(file="op_trigger_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other)
 
-# Units (multiplier) in output
-plotUnits<- c(Yield=0.001,          Fbar=1,   SSB=0.001,          TSB=0.001,           Recruits=0.001,        DeadM=0.001)
-plotLabels<-c(Yield='(1000 tonnes)',Fbar=" ", SSB='(1000 tonnes)',TSB='(1000 tonnes)', Recruits='(millions)', DeadM='(1000 tonnes)')
-roundUnits<- c(Yield=1,             Fbar=3,   SSB=1,              TSB=1,               Recruits=0,            DeadM=1)
+
+
+# read units and label used for plots etc.
+a<-read_csv(file=file.path(data_dir,'units.csv'),col_types = cols()) 
+plotUnits<-a$plotUnits; names(plotUnits)<-a$type
+plotLabels<-a$plotLabels; names(plotLabels)<-a$type
+plotLabels[is.na(plotLabels)]<-" "              
+roundUnits<-a$roundUnits; names(roundUnits)<-a$type
+rm(a)
 
 # read status quo values (= values in the terminal hindcast SMS model year)  
 status_quo<-read_csv(file=file.path(data_dir,'status_quo.csv'),col_types = cols()) %>%
@@ -98,7 +110,6 @@ colnames(refPoints)<-c('Flim','Fpa','Blim','Bpa')
 refPoints[,3:4] <- refPoints[,3:4]* plotUnits['SSB']
 
 explPat<-scan(file.path(data_dir,"op_exploitation.in"),quiet = TRUE, comment.char = "#")
-#explPat<-scan(file.path(data_dir,"op_f.in"),quiet = TRUE, comment.char = "#")
 explPat<-array(explPat,dim=c(n.age,n.VPA,n.seasons),dimnames=list(paste('age',as.character(first.age:max.age)),VPA.spNames,paste0('Q_',1:n.seasons)))
 annExplPat<-apply(explPat,c(1,2),sum) # annual exploitation pattern
 Fages<-SMS@avg.F.ages
@@ -186,9 +197,6 @@ do_baseLine<-function(){
 
 updateExplPatttern<-function(explPat) {
   # change factor in annual exploitation pattern
-  
-  # test annExplPat[,'Cod']; annExplPat[6:9,'Cod']<-annExplPat[6:9,'Cod']*0.2; annExplPat[,'Cod']
-  
   change<-annExplPat/apply(explPat,c(1,2),sum) 
   change[is.na(change)]<-1.0
   for (q in (1:n.seasons)) explPat[,,q]<-explPat[,,q]*change
@@ -210,11 +218,11 @@ op.n<-0 #counter for calls to op.exe, used for tests only
 # call to the OP program
 do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeOption=FALSE,writeExplPat=FALSE,source='') {
   op.n<<-op.n+1
-  cat(op.n, "call source:", source, " readResSimple:",readResSimple," readResDetails:",readResDetails," readResStom:",readResStom," writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
+  #cat(op.n, "call source:", source, " readResSimple:",readResSimple," readResDetails:",readResDetails," readResStom:",readResStom," writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
   
    # write the F values
    Fvalues<-OP.trigger@Ftarget['init',]
-   cat("1\n",Fvalues,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values
+   #cat("1\n",Fvalues,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values
 
    if (writeOption) {  #write option files
      write.FLOP.control(OP,file="op.dat",path=data_dir,nice=TRUE,writeSpNames=FALSE)   
@@ -235,7 +243,6 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
    }  
    
    # run the script
-   ##system2(command=file.path(oldwd,data_dir,"run_OP.bat"), wait = TRUE,stdout = file.path(oldwd,data_dir,"Run_OP_out.dat"))
    if(OS == "windows") shell(cmd)
    if(OS == "unix") system(cmd)
      
@@ -301,14 +308,18 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     s<-merge(x=bbb,y=pred_format,by.x='Prey',by.y='old',all.x=TRUE)
     s$Prey<-s$new; s$new<-NULL
     s$Prey.no<-s$new_no; s$new_no<-NULL
-    
     s<-merge(x=s,y=pred_format,by.x='Predator',by.y='old',all.x=TRUE)
-    
     s<-aggregate(s$eatenW,list(s$new,s$Year,s$new_no,s$Prey,s$Prey.no),sum)
     names(s)<-c("Predator","Year","Predator.no","Prey","Prey.no","eatenW")
     
     human<-data.frame(Predator='Humans',Year=d1$Year,Predator.no=0,Prey=d1$Species,Prey.no=d1$Species.n,eatenW=d1$Yield, stringsAsFactors = FALSE)
-    s<-bind_rows(s,human)
+    h<-merge(x=human,y=pred_format,by.x='Prey',by.y='old',all.x=TRUE)
+    h$Prey<-h$new; h$new<-NULL
+    h$Prey.no<-h$new_no; h$new_no<-NULL
+    h<-aggregate(h$eatenW,list(h$Predator,h$Predator.no,h$Year,h$Prey,h$Prey.no),sum)
+    names(h)<-c("Predator","Predator.no","Year","Prey","Prey.no","eatenW")
+
+    s<-bind_rows(s,h)
  
     # make unique format/factors  for predator and preys
     prey<-unique(data.frame(no=s$Prey.no,Species=s$Prey, stringsAsFactors = FALSE))
@@ -369,8 +380,7 @@ put_other_predators<-function(a,OP){
   return(OP)
 }
 
-# test put_other_predators(other_predators,OP)
-  
+
 hcrlab = c("Fixed F", "F from SSB", "F from TSB")
 hcr <- data.frame(val = hcrlab)
 hcrval<-c(1,2,22);names(hcrval)<-hcrlab 
@@ -383,6 +393,10 @@ get_op_Fmodel<-function(){
 }
 Foption_tab<-get_op_Fmodel()
 
+
+# save settings
+#lastSet<-list(final_year=termYear,F_model=Foption_tab,Other_pred=other_predators,exploi_pat=annExplPat,    recruitment=recruitMode)
+#lapply(lastSet,print)
 
 put_op_Fmodel<-function(a,OP.trigger) {
   OP.trigger@HCR[1,] <- hcrval[a$HCR]
@@ -427,33 +441,6 @@ makeResTable<-function(x){
   return(a)
 }
 
-if (test) { # simple predictions
-  res<-  list(out=do_OP(),Fmulti=rep(F_mult,n.fleet),baseLine=do_baseLine(),source='test')
-  res
-  plot_radar_all(res)
-  plot_one(res,type='Fbar',plot.legend = TRUE)
-  plot_one(res,type='Yield')
-  plot_one(res,type='Recruits')
-  plot_one(res,type='SSB')
-  
-  makeResTable(res)
-}
-
-
-
-if (test) { # detailed predictions
-  res<-  list(out=do_OP(readResDetails=TRUE,readResStom=TRUE),Fmulti=rep(F_mult,n.fleet),baseLine=do_baseLine(),source='test')
-  res
- 
-  plot_who_eats(res$out$detail_eaten)
-  plot_summary(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),years=c(0,5000),species='Cod',splitLine=FALSE,incl.reference.points=FALSE) 
-  plot_summary(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),years=c(0,5000),species='Mackerel',splitLine=FALSE,incl.reference.points=FALSE) 
-  
-  makeResTable(res)
-}
-
-
-  
 sliders <- div()
 for (i in (1:n.fleet)) {
   sliders <- tagAppendChild(sliders, sliderInput(inputId = paste0("F.",fleetNames[i]),
@@ -536,6 +523,13 @@ ui <- navbarPage(title = "SMS",
                              conditionalPanel("input.recDetSto=='Stochastic'",textOutput("stoch_explain"))
                         ),
                         
+                      # conditionalPanel("input.Option=='Set/Reset options'",
+                      #                   wellPanel(
+                      #                     radioButtons(inputId = 'setReset',label='Set/Reset option ',choices=list('Set','Reset')),
+                      #                     actionButton(inputId="updateSetReset", "Confirm Set/Reset choice")
+                      #                   )  %>% helper(colour = "green", type = "markdown",content = "SetReset")
+                      #  ),
+                        
                         
                         conditionalPanel("input.Option=='F model'",
                           wellPanel(
@@ -547,10 +541,11 @@ ui <- navbarPage(title = "SMS",
                             conditionalPanel("input.HCR!=' 1: Fixed F'",numericInput(inputId="T2",label=paste("T2",plotLabels['SSB']),value=Foption_tab[1,'T2'],min=0,step=1))
                            )) %>% helper(colour = "green", type = "markdown",content = "Fmodel")
                           ),
+                        
                          conditionalPanel("input.Option=='Other predators'",
                                           selectInput(inputId="OtherSp", label="Other predator",choices=other.spNames),
-                                          sliderInput(inputId="OtherFirst",label="First year for change",min = stq_year+1, max = termYear, value = stq_year+1, step =1),
-                                          sliderInput(inputId="OtherSecond",label="last year for change",min = stq_year+1, max = termYear, value = termYear, step =1),
+                                          sliderInput(inputId="OtherFirst",label="First year for change",min = stq_year+1, max = termYear, value = stq_year+1, step =1,sep=''),
+                                          sliderInput(inputId="OtherSecond",label="last year for change",min = stq_year+1, max = termYear, value = termYear, step =1,sep=''),
                                           numericInput(inputId="OtherFactor",label="Change factor per year, (e.g. 1.1 means a 10 % increase per year)",value=1 ,min=-2,step=0,1)
                          ),
                                           
@@ -558,8 +553,8 @@ ui <- navbarPage(title = "SMS",
                                          selectInput(inputId="exSpecies", label="Species",choices=VPA.spNames)),
                                          
                                          
-                         conditionalPanel("input.Option=='Final year'",sliderInput(inputId="finalYear",label="Final year in prediction",min = stq_year+1, max = stq_year+100, value = termYear, step =1)%>%
-                          helper(colour = "green", type = "markdown",content = "finalYear")),
+                         conditionalPanel("input.Option=='Final year'",sliderInput(inputId="finalYear",label="Final year in prediction",min = stq_year+1, max = stq_year+100, value = termYear, step =1,sep='')%>%
+                                                                       helper(colour = "green", type = "markdown",content = "finalYear")),
                          conditionalPanel("input.Option=='F model'",actionButton(inputId="updateOptionTable", "Update option table")),
                          conditionalPanel("input.Option=='Other predators'",actionButton(inputId="updateOptionTableOther", "Update option table"))
                            ),
@@ -616,9 +611,10 @@ ui <- navbarPage(title = "SMS",
                  tabPanel(title="Results by year",
                       column(2,br(),
                          selectInput(inputId="sumSpecies", label="Select Species:",choices=VPA.spNames),
-                         sliderInput(inputId="firstY",label="First year output",value=stq_year+1,min=fy_year_hist,max=termYear,step=1),
-                         sliderInput(inputId="lastY",label="Last year output",value=termYear,min=fy_year_hist+5,max=termYear,step=1),
-                         radioButtons(inputId = 'inclRef',label='Include reference points',choices=c('yes','no')),
+                         sliderInput(inputId="firstY",label="First year output",value=stq_year+1,min=fy_year_hist,max=termYear,step=1,sep=''),
+                         sliderInput(inputId="lastY",label="Last year output",value=termYear,min=fy_year_hist+5,max=termYear,step=1,sep=''),
+                         radioButtons(inputId = 'inclRef',label='Include reference points',choices=c('yes','no')) %>%
+                           helper(colour = "green", type = "markdown",content = "reference_points"),
                          br(), downloadButton(outputId = "downSumPlots", label = "Download the plot")
                        #  wellPanel( 
                       #     sliderInput(inputId = 'pixx',label='Width plot', value=1200,min=100,max=2000,step=100),
@@ -639,14 +635,31 @@ ui <- navbarPage(title = "SMS",
                          # radioButtons(inputId="whoOtherFood",label='Include "other foods"',choices = c('Excl. other','Incl. other')),
                           radioButtons(inputId="whoPredPrey",label='select value for stacking',choices = c('by prey','by predator')),
                           wellPanel(
-                            sliderInput(inputId="firstYwho",label="First year output",value=stq_year+1,min=fy_year_hist,max=termYear,step=1),
-                            sliderInput(inputId="lastYwho",label="Last year output",value=termYear,min=fy_year_hist+5,max=termYear,step=1)
+                            sliderInput(inputId="firstYwho",label="First year output",value=stq_year+1,min=fy_year_hist,max=termYear,step=1,sep=''),
+                            sliderInput(inputId="lastYwho",label="Last year output",value=termYear,min=fy_year_hist+5,max=termYear,step=1,sep='')
                           ),
                        ),
                       column(9,br(),plotOutput(outputId = "whoEats_plot")),
                       downloadButton(outputId = "downWhoEats", label = "Download the plot")
+                ),
+                tabPanel(title = "Food web", 
+                         column(3,
+                                br(),
+                                 wellPanel(
+                                   sliderInput(inputId="yearFoodWeb",label="Year",value=stq_year+1,min=fy_year_hist,max=termYear,step=1,sep=''),
+                                 ),
+                                checkboxGroupInput(inputId="foodWebSp",label='Select species',
+                                  choices = pp_short$new,
+                                  selected = filter(pp_short, group %in% c("Other predators","VPA.pred","VPA.prey"))$new,
+                                  inline = FALSE
+                                )
+                         ),
+                         column(9,br(),sankeyNetworkOutput(outputId ="FoodWeb_plot",height = "700px")),
+                         downloadButton(outputId = "downFoodWeb", label = "Download the plot")
                 )
-            ))
+            )),
+        tabPanel(title='About',includeMarkdown(file.path(help_dir, "about.md")))
+        ,useShinyjs()
 )
 
  server <- function(input, output, session) {
@@ -680,10 +693,6 @@ ui <- navbarPage(title = "SMS",
    
    output$stoch_explain <- renderText({paste('Constant Fishing mortalities will not work for stochastic recruitment. You have to defined Harvest Control Rules in the "F-model" option above,',
                                              'starting with the default values')})
-   
-   #output$summary_plot <-renderPlot({   if (res$rv$out$options$readResDetails) plot_summary(res$rv,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),
-  #                                  years=c(input$firstY,input$lastY),species=input$sumSpecies,splitLine=FALSE,incl.reference.points= (input$inclRef=='yes'))},
-  #                                  width = 1350, height=750,units = "px", pointsize = 25, bg = "white")
    output$summary_plot <-renderPlot({   if (res$rv$out$options$readResDetails) {sumPlot<<- plot_summary_new(res=res$rv,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),
                                                                                             years=c(input$firstY,input$lastY),species=input$sumSpecies,splitLine=FALSE,
                                                                                             incl.reference.points= (input$inclRef=='yes'));sumPlot}},
@@ -691,6 +700,20 @@ ui <- navbarPage(title = "SMS",
    
    output$whoEats_plot <- renderPlot({whoPlot<<-plot_who_eats(res$rv$out$detail_eaten,pred=input$whoPred,prey=input$whoPrey,predPrey=input$"whoPredPrey",
                                                      years=c(input$firstYwho,input$lastYwho),exclHumans=(input$whoHuman=='Excl. catch'));whoPlot})
+   
+   output$FoodWeb_plot <- renderSankeyNetwork({foodWebPlot<<-FoodWeb_plot(res$rv$out$detail_eaten,year=input$yearFoodWeb,incl_sp=input$foodWebSp );foodWebPlot})
+ 
+  # to get full functionality with respect to drag and click. does not improve much and I don't know how to solve it!
+  # output$FoodWeb_plot <- renderSankeyNetwork({foodWebPlot<<-FoodWeb_plot(res$rv$out$detail_eaten,year=input$yearFoodWeb,incl_sp=input$foodWebSp)
+  # clickFun <- 
+  #   'function() { 
+  #        d3.selectAll(".node").on("mousedown.drag", null);
+  #        d3.selectAll(".node").on("click",function(d) { Shiny.onInputChange("id", d.name); });
+  #      }'
+  # 
+  # onRender(foodWebPlot, clickFun)
+  # })
+   
    
    output$downSumPlots <- downloadHandler(
      filename =  function() {paste0("Summary_",input$sumSpecies,'.png')},
@@ -704,8 +727,17 @@ ui <- navbarPage(title = "SMS",
      content = function(file) {
        ggsave(file,plot=whoPlot,width = 26,height = 15,units='cm')
      }
-    )
+   )
+ 
+   output$downFoodWeb <- downloadHandler(
+     filename =  function() {paste0("foodWeb_",input$yearFoodWeb,".html")},
+     content = function(file) {
+       saveWidget(foodWebPlot, file=file )
+     }
+   )
    
+   
+ 
    ######### there must be a smarter way to do the same thing 
    output$radarPlots1 <- downloadHandler(
      filename = "radar_myPlot.png",
@@ -769,8 +801,6 @@ ui <- navbarPage(title = "SMS",
    )
    
   
-   
-   
    #result from testdrag ??
    observeEvent(input$rv, {
      annExplPat[paste('age',as.character(first.age:last.age[input$exSpecies])),input$exSpecies]<<-input$rv
@@ -779,8 +809,7 @@ ui <- navbarPage(title = "SMS",
    })
    
   #####
-   
- 
+  
    
   df <- eventReactive(input$updateOptionTable || input$Option=='F model', {
    if (input$Option=='F model') {
@@ -797,10 +826,38 @@ ui <- navbarPage(title = "SMS",
    }
   })
  
-  
+  # set - reset options NOT USED
+   dummy_lastSet <- observeEvent(input$updateSetReset ,{
+     #cat(input$updateSetReset,input$setReset,'\n')
+     if (input$setReset=='Set') {
+       #cat("\nCommand Set\n")
+       lastSet<<-list(final_year=termYear,F_model=Foption_tab,Other_pred=other_predators,exploi_pat=annExplPat,    recruitment=recruitMode)
+       #lapply(lastSet,print)
+     }
+     if (input$setReset=='Reset') {
+       #cat("\nCommand ReSet\n")
+
+       termYear<<-lastSet$final_year
+       updateSliderInput(session,inputId="finalYear", value = termYear)
+       updateSliderInput(session,inputId="lastY",max=termYear)
+       updateSliderInput(session,inputId="lastYwho",max=termYear)
+       
+       
+       Foption_tab<<-lastSet$F_model
+ 
+       other_predators<<-lastSet$Other_pred
+       annExplPat<<-lastSet$exploi_pat
+       recruitMode<<- lastSet$recruitment
+
+       
+      # reset("finalYear")  #shinyjs
+     }
+   })
+   
+   
 
   otherDf <- eventReactive(input$updateOptionTableOther || input$Option=='Other predators',{
-    #cat(input$updateOptionTableOther,input$Option,input$OtherFactor,input$OtherFirst,input$OtherSecond,'\n')
+   #cat(input$updateOptionTableOther,input$Option,input$OtherFactor,input$OtherFirst,input$OtherSecond,'\n')
      if (input$Option=='Other predators') {
        b<-other_predators
        b[b$Predator== input$OtherSp,'Total.change']<- input$OtherFactor**(input$OtherSecond-input$OtherFirst+1)
@@ -817,7 +874,7 @@ ui <- navbarPage(title = "SMS",
    })
    
    
-  df2 <- eventReactive( input$tabOpt=='Options', {return(Foption_tab)})
+   df2 <- eventReactive( input$tabOpt=='Options', {return(Foption_tab)})
 
    # make a new prediction with detailed output
    doUpdateDetails<-function(){
@@ -844,7 +901,7 @@ ui <- navbarPage(title = "SMS",
    
   
    observeEvent(input$detailed_predict,{
-     if (input$detailed_predict=='Results by year') doUpdateDetails() else if (input$detailed_predict=='Who eats whom') doUpdateDetailsM2()
+     if (input$detailed_predict=='Results by year') doUpdateDetails() else if (input$detailed_predict=='Who eats whom' | input$detailed_predict=="Food web") doUpdateDetailsM2()
     })
    
    observeEvent(input$doRunDetailed, {doUpdateDetails()})

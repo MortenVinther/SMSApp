@@ -1,0 +1,7 @@
+type,plotUnits,plotLabels,roundUnits
+Yield,0.001,(1000 tonnes),1
+Fbar,1, ,3
+SSB,0.001,(1000 tonnes),1
+TSB,0.001,(1000 tonnes),1
+Recruits,0.001,(millions),0
+DeadM,0.001,(1000 tonnes),1

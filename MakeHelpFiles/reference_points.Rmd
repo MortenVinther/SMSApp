@@ -1,0 +1,58 @@
+---
+title: 'Reference points'
+output:
+  html_document:
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+print(getwd())
+library(tidyverse)
+library(kableExtra)
+data_dir <- file.path("..","Data")
+# read units and label used for plots etc.
+a<-read_csv(file=file.path(data_dir,'units.csv'),col_types = cols()) 
+plotUnits<-a$plotUnits; names(plotUnits)<-a$type
+plotLabels<-a$plotLabels; names(plotLabels)<-a$type
+roundUnits<-a$roundUnits; names(roundUnits)<-a$type
+rm(a)
+
+refPoints<-matrix(scan(file.path(data_dir,"op_reference_points.in"),quiet = TRUE, comment.char = "#"),ncol=4,byrow=TRUE)
+rownames(refPoints)<-c("Cod","Whiting", "Haddock","Saithe", "Mackerel","Herring","N.sandeel","S.sandeel","Nor.pout","Sprat","Plaice","Sole")
+colnames(refPoints)<-c('Flim','Fpa','Blim','Bpa')
+refPoints[,3:4] <- refPoints[,3:4]* plotUnits['SSB']
+refPoints[refPoints<0]<-NA
+```
+
+Reference points are limit points (B<sub>lim</sub>, and  F<sub>lim</sub>), precautionary points (B<sub>pa</sub>, and  F<sub>pa</sub>) or targets points (F<sub>MSY</sub>) used to evaluate the stock status and to  provide advice.  
+
+(Modified from ICES https://www.ices.dk/sites/pub/Publication%20Reports/Advice/2021/2021/Advice_on_fishing_opportunities.pdf )
+
+Due to the variability in stock size, there may be situations where the spawning stock biomass (SSB) is so low that reproduction is at
+significant risk of being impaired. A precautionary approach implies that fisheries management in such situations should
+be more cautious. For stocks where quantitative information is available, the reference point  B<sub>lim</sub> may be identified as the
+stock size below which there is a high risk of reduced recruitment. A precautionary safety margin incorporating
+the uncertainty in ICES stock estimates leads to the precautionary reference point B<sub>pa</sub>, which is a biomass reference point
+designed to have a low probability of being below  B<sub>lim</sub>. When the spawning-stock size is estimated to be above B<sub>pa</sub>, the
+probability of impaired recruitment is expected to be low.
+
+F<sub>lim</sub> is the fishing mortality which in the long term will result in an average stock size at  B<sub>lim</sub>. Fishing at levels above F<sub>lim</sub> will
+result in a decline in the stock to levels below F<sub>lim</sub>. ICES also defines F<sub>pa</sub>, which is the fishing mortality that results in no
+more than 5% probability of bringing the spawning stock to below B<sub>lim</sub> in the long term.
+
+F<sub>MSY</sub> is the fishing mortality that in the long run leads to the Maximum Sustainable Yield (MSY) from the stock. MSY refers to a long-term average and is measured as weight of the catch in the ICES advice. B<sub>MSY</sub> is the expected average biomass if the stock is exploited at F<sub>MSY</sub>, however B<sub>MSY</sub> is not used as a target point for the ICES advice. MSY B<sub>trigger</sub> is the parameter in ICES MSY framework which triggers advice on reduced fishing mortality relative to F<sub>MSY</sub>. MSY B<sub>trigger</sub> is as minimum set at B<sub>pa</sub>. When multi-species interactions are important MSY reference points for a given species are conditional on the stock size of other predator and prey species. F<sub>MSY</sub> and MSY B<sub>trigger</sub> are not used directly in this application, but can candidate points can be examined using the F-Model option in "Detailed predictions".
+
+**Reference points as defined in this application (may not be the same as applied by ICES advice).**
+
+```{r pressure, echo=FALSE, comment=""}
+
+knitr::kable(refPoints,digits=c(roundUnits['Fbar'],roundUnits['Fbar'],roundUnits['SSB'],roundUnits['SSB'])) %>%
+  kable_classic(full_width = F, html_font = "Cambria") %>%
+   column_spec(column = 1:1, width = "1.0in") %>%
+  column_spec(column = 2:5, width = "0.7in")
+
+```
+
+ Reference points can, if defined, optionally be shown on the summary plots.
+ 

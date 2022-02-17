@@ -12,9 +12,7 @@ This section provides some background information for this App. To make forecast
 This App makes forecast scenarios for the main fish stocks in the North Sea, based on the results from the Stochastic Multispecies Model (SMS) used by ICES to provide multispecies mortalities. Future fishing pressure and exploitation pattern can be changed for the stocks and the model will then calculate future fishing yield and stock sizes. SMS takes into account that fish eats fish, so a change in fishing pressure for a given species will directly change its stock size and yield, but may also change stock size and yield for other species which are prey or predator for the given species.   
 
 
-
-
-<!--html_preserve--><table width="70%">
+<table width="70%">
 <tr><td colspan=4><b>The model has 27 stocks:</td></tr>
 <tr><td colspan=4><hr noshade></td></tr>
 <tr> <td align=left><b></b></td> <td align=right><b>Danish stock name</b></td>	<td align=right><b>Stock name</b></td>	<td align=right><b>Type</b></td> </tr>
@@ -47,7 +45,7 @@ This App makes forecast scenarios for the main fish stocks in the North Sea, bas
 <tr> <td align=left><b>27</b></td><td align=right>Tunge</td>	<td align=right>Sole</td>	<td align=right>Dynamic</td></tr>
 <tr><td colspan=4><hr noshade></td></tr>
 </table><br>
-<!--/html_preserve-->
+
 <br>
 
 There are two main types of stocks shown in the table: "Other predator" and "Dynamic stocks". The group of **Other predators** includes a number of sea  birds, fish stocks and marine mammals, which all eat fish. It is assumed that the we know the abundance of these predators in the model, which will be be kept constant if the user do not change it. The group of **Dynamic stocks** includes the main fish stocks, where stock sizes change dynamically from recruitment, fishing pressure and natural mortality. Some of the stocks act both as predator and prey species, while some are only predators or preys in the model. Plaice and sole do not eat any of the fish stocks in the model (at a significant level) or is prey (at a significant level) for the model predators.

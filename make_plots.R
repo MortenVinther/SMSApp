@@ -203,6 +203,55 @@ plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHuman
 
 
 
+FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,height=NULL,margin=NULL,MyPalette=c('red','blue'),incl_sp='Cod') {
+  
+  x<-bind_rows(histEaten,x)
+ 
+  x<-filter(x,Year==year & Predator %in% incl_sp & Prey %in% incl_sp)
+  #save(x,file=paste0('x2',year,'.data'))
+  
+  x<-mutate(x,target=as.character(Predator),source=as.character(Prey)) %>% as.data.frame
+
+  
+  # From these flows we need to create a node data frame: it lists every entities involved in the flow
+  nodes<-rbind(unique(data.frame(no=x$Predator.no, name=x$target)),
+               unique(data.frame(no=x$Prey.no, name=x$source))) %>% unique() %>% arrange(no) %>% select(name)
+  
+  # With networkD3, connection must be provided using id, not using real name like in the links dataframe. So we need to reformat it.
+  x$IDsource=match(x$source, nodes$name)-1 
+  x$IDtarget=match(x$target, nodes$name)-1
+  
+  # prepare colour scale
+  #ColourScal ='d3.scaleOrdinal() .range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+  
+  
+  col2hex<-function (cname) {
+    colMat <- col2rgb(cname)
+    rgb(red = colMat[1, ]/255, green = colMat[2, ]/255, blue = colMat[3, 
+    ]/255)
+  }
+  
+  ii<-NULL
+  for (i in col2hex(MyPalette)) ii<-paste(ii,paste0('"',i,'"'),sep=',')
+  ii
+  
+  ColourScal <- paste0('d3.scaleOrdinal() .range([', ii,'])')
+  
+
+  # Make the Network
+  p<-sankeyNetwork(Links = x, Nodes = nodes,
+                   Source = "IDsource", Target = "IDtarget",
+                   Value = "eatenW", NodeID = "name", 
+                   sinksRight=FALSE, 
+                   units='kt',width=width,height=height,margin=margin,
+                   # iterations = 0, # this will give the same layout (as defined by order of the nodes) for all years, 
+                   #colourScale=ColourScal, 
+                   nodeWidth=35, fontSize=12, nodePadding=10)
+  #saveWidget(p, file=file.path( paste0("sankey_",year,".html")))
+  return(p)
+}
+
+
 # Radar plot function
 plot_one<-function(x,type='Yield',plot.legend = TRUE) {
   a1 <- filter(x$out$b,variable==type)
@@ -222,6 +271,9 @@ plot_one<-function(x,type='Yield',plot.legend = TRUE) {
   ggradar(a,grid.max=gmax,grid.min=0,plot.title='',plot.legend=plot.legend,legend.position='top',
           group.colours =DTU.col,legend.text.size = 18)
 }
+
+
+
 
 plot_radar_all<-function(res){
   pF<-plot_one(res,type='Fbar',plot.legend = TRUE)

@@ -15,3 +15,4 @@
 
 **Recruitment** defines how recruitments are derived from the stock-recruitment relation. In deterministic mode, recruitments are without the natural variability, while stochastic recruitment includes the variability observed in the historic SMS.
 
+**Set/reset options** Here you can set (save) options or reset options from the last set (save). 
