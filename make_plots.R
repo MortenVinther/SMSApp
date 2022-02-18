@@ -160,41 +160,41 @@ plot_summary_old<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
 }
 
 
-plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHumans=TRUE){
+plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHumans=TRUE,exclResidM1=TRUE){
   
   x<-bind_rows(histEaten,x)
-  
+
+  pp<-setNames(my.colors,predPreyFormat)
   x<-filter(x,Year>=years[1] & Year<=years[2])
-  if (exclHumans)  x<-filter(x,Predator !='Humans')
+  if (exclHumans)   x<-filter(x,Predator !=predPreyFormat[2])
+  if (exclResidM1)  x<-filter(x,Predator !=predPreyFormat[1])
   
   if (prey != 'all preys') {
     tit<-paste(prey, "eaten by"); 
     x<-filter(x,Prey==prey) 
   } else tit<-'All preys eaten by'
-  
+  p<-unique(x$Prey)
+  prey_pp<-pp[predPreyFormat %in% p]
+
   if (pred !='all predators') {
     x<-filter(x,Predator==pred); 
     tit<-paste(tit,pred)
   } else tit<-paste(tit,'all predators')
-  
-  scale_fill_pp <- function(...){
-    ggplot2:::manual_scale(
-      'fill', 
-      values = setNames(my.colors, predPreyFormat), 
-      ...
-    )
-  }
+  p<-unique(x$Predator)
+  pred_pp<-pp[predPreyFormat %in% p]
   
   if (predPrey=='by prey') {
+    pp<-prey_pp
     x <-aggregate(eatenW~Year+Prey,data=x,sum)
     p<-ggplot(x, aes(x = Year, y = eatenW, fill = Prey))  
     
   } else   if (predPrey=='by predator') {
+    pp<-pred_pp
     x <-aggregate(eatenW~Year+Predator,data=x,sum)
     p<-ggplot(x, aes(x = Year, y = eatenW, fill = Predator)) 
   }
   p +  geom_bar(stat = "identity") + 
-    scale_fill_pp() +
+    scale_fill_manual(values= pp)+ 
     labs(x="", y = paste("Biomass eaten",plotLabels['DeadM'])) +
     ggtitle(tit) +
     theme_minimal() +
@@ -217,7 +217,7 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
   nodes<-rbind(unique(data.frame(no=x$Predator.no, name=x$target)),
                unique(data.frame(no=x$Prey.no, name=x$source))) %>% unique() %>% arrange(no) %>% select(name)
   
-  # With networkD3, connection must be provided using id, not using real name like in the links dataframe. So we need to reformat it.
+  #  need to reformat it.
   x$IDsource=match(x$source, nodes$name)-1 
   x$IDtarget=match(x$target, nodes$name)-1
   
@@ -233,8 +233,7 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
   
   ii<-NULL
   for (i in col2hex(MyPalette)) ii<-paste(ii,paste0('"',i,'"'),sep=',')
-  ii
-  
+
   ColourScal <- paste0('d3.scaleOrdinal() .range([', ii,'])')
   
 

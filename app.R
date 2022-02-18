@@ -5,6 +5,7 @@ library(shinyjs)
 suppressMessages(library(DT))
 library(readr)
 suppressMessages(library(dplyr))
+suppressMessages(library(forcats))
 library(ggplot2)
 suppressMessages(library(wordcloud))
 library(RColorBrewer)
@@ -58,18 +59,20 @@ firstVPA<-n.species.tot-n.VPA+1   #first species with analytical assessment
 VPA.spNames<-spNames[firstVPA:n.species.tot]
 spOtherNames<-c('Other.food',spNames)
 other.spNames<-spNames[1:n.pred.other]
-  
+ 
+
+my.colors<-c('grey15','grey85','red','green','plum','blue','cyan','yellow','coral','skyblue','purple','magenta',
+             'limegreen','pink','darkorange3','aquamarine','beige','darkslategray','brown1','blueviolet','chocolate1' )
+
 # group predator names for eaten biomass
 pred_format<-read.csv(file.path(data_dir,'pred_format.csv'),header=TRUE, stringsAsFactors = FALSE)
+#pp<-unique(subset(pred_format,new_no>=0,select=c(new,new_no,group,is.predator,is.prey)))
 pp<-unique(subset(pred_format,select=c(new,new_no,group)))
 pp<-pp[order(pp$new_no),]
 predPreyFormat<-pp$new
 pp_short<-filter(pp,new_no >=0) 
 
 recruitMode<-c('Determenistic','Stochastic')[1]
-
-my.colors<-c('grey15','grey85','red','green','plum','blue','cyan','yellow','coral','skyblue','purple','magenta',
-                         'limegreen','pink','darkorange3','aquamarine','beige','darkslategray','brown1','blueviolet','chocolate1' )
 
 
 # options for predictions, reset from master version
@@ -285,12 +288,23 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
   
   if (readResStom){
     s<-read.table(file.path(data_dir,'op_summary.out'),header=T)
-    s$N.bar<-s$N*(1-exp(-s$Z))/s$Z
     s$Species<-spNames[s$Species.n]
-    s<-subset(s, select=c(Species,Year,Quarter,Species.n,Age,M2,N.bar,west))
-    s<-data.frame(s,deadM2=s$M2*s$N.bar*s$west,deadM=s$M*s$N.bar*s$west)
-    s<-subset(s,select=c(Species, Year, Quarter, Species.n, Age, M2,deadM2))
+    s<-subset(s, select=c(Species,Year,Quarter,Species.n,Age,M1,M2,Nbar,west,Yield))
+    s<-data.frame(s,deadM1=s$M1*s$Nbar*s$west,deadM2=s$M2*s$Nbar*s$west,yield=s$Yield)
+    s<-subset(s,select=c(Species, Year, Quarter, Species.n, Age, M2,deadM1,deadM2,yield))
 
+    r<-data.frame(Predator=predPreyFormat[1], Year=s$Year,Predator.no=-1,Prey=s$Species,Prey.no=s$Species.n,eatenW=s$deadM1, stringsAsFactors = FALSE)
+    r<-aggregate(r$eatenW,list(r$Predator,r$Predator.no,r$Year,r$Prey,r$Prey.no),sum)
+    names(r)<-c("Predator","Predator.no","Year","Prey","Prey.no","eatenW")
+    
+    h<-data.frame(Predator=predPreyFormat[2], Year=s$Year,Predator.no=0,Prey=s$Species,Prey.no=s$Species.n,eatenW=s$yield, stringsAsFactors = FALSE)
+    h<-aggregate(h$eatenW,list(h$Predator,h$Predator.no,h$Year,h$Prey,h$Prey.no),sum)
+    names(h)<-c("Predator","Predator.no","Year","Prey","Prey.no","eatenW")
+    
+    r<-bind_rows(r,h)
+    r$eatenW<-r$eatenW*plotUnits['DeadM']
+  
+    
     M2<-read.table(file.path(data_dir,'op_part_m2.out'),header=T)
     M2$Area<-NULL
     M2<-data.frame(Predator=spNames[M2$Predator.no],Prey=spOtherNames[M2$Prey.no+1],M2) 
@@ -312,15 +326,10 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     s<-aggregate(s$eatenW,list(s$new,s$Year,s$new_no,s$Prey,s$Prey.no),sum)
     names(s)<-c("Predator","Year","Predator.no","Prey","Prey.no","eatenW")
     
-    human<-data.frame(Predator='Humans',Year=d1$Year,Predator.no=0,Prey=d1$Species,Prey.no=d1$Species.n,eatenW=d1$Yield, stringsAsFactors = FALSE)
-    h<-merge(x=human,y=pred_format,by.x='Prey',by.y='old',all.x=TRUE)
-    h$Prey<-h$new; h$new<-NULL
-    h$Prey.no<-h$new_no; h$new_no<-NULL
-    h<-aggregate(h$eatenW,list(h$Predator,h$Predator.no,h$Year,h$Prey,h$Prey.no),sum)
-    names(h)<-c("Predator","Predator.no","Year","Prey","Prey.no","eatenW")
+    s<-bind_rows(s,r)
+   
 
-    s<-bind_rows(s,h)
- 
+        
     # make unique format/factors  for predator and preys
     prey<-unique(data.frame(no=s$Prey.no,Species=s$Prey, stringsAsFactors = FALSE))
     pred<-unique(data.frame(no=s$Predator.no,Species=s$Predator, stringsAsFactors = FALSE))
@@ -334,7 +343,7 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     
      
     s<- mutate(as_tibble(s),Predator=parse_factor(Predator,levels=predPreyFormat),Prey=parse_factor(Prey,levels=predPreyFormat))
-    
+ 
     predPrey<-lapply(pred,function(x) {a<-filter(s,Predator==x) %>% distinct(Prey);as.character(unlist(a))})
     names(predPrey)<-pred
     
@@ -569,7 +578,7 @@ ui <- navbarPage(title = "SMS",
                            column(4,   
                              br(),br(),
  
-                           actionButton(inputId="doRunDetailed",label="Push to update prediction",icon("refresh")),
+                           actionButton(inputId="doRunDetailed",label="Push to update prediction",icon("sync")),
                            br(),br(),br(),
                            downloadButton(outputId = "radarPlots3", label = "Download the plot")),
                 
@@ -630,10 +639,10 @@ ui <- navbarPage(title = "SMS",
                             selectInput(inputId="whoPred", "Select a predator:",'all predators'),
                             selectInput(inputId="whoPrey", "Select a prey:",'all preys')
                           ),
-                          radioButtons(inputId="whoHuman",label='Include humans as "predator"',choices = c('Excl. catch','Incl. catch')),
-                         # radioButtons(inputId="whoResidual",label='Include "Residual mortality" (M1) as "predator"',choices = c('Excl. M1','Incl. ')),
-                         # radioButtons(inputId="whoOtherFood",label='Include "other foods"',choices = c('Excl. other','Incl. other')),
-                          radioButtons(inputId="whoPredPrey",label='select value for stacking',choices = c('by prey','by predator')),
+                          radioButtons(inputId="whoHuman",label='Include humans as "predator"',choices = c('Incl. catch','Excl. catch'),inline=TRUE),
+                          radioButtons(inputId="whoResidual",label='Include "Residual mortality" (M1) as "predator"',choices = c('Incl. M1','Excl. M1'),inline=TRUE),
+                         # radioButtons(inputId="whoOtherFood",label='Include "other foods"',choices = c('Incl. other','Excl. other')),
+                          radioButtons(inputId="whoPredPrey",label='select value for stacking',choices = c('by prey','by predator'),inline=TRUE),
                           wellPanel(
                             sliderInput(inputId="firstYwho",label="First year output",value=stq_year+1,min=fy_year_hist,max=termYear,step=1,sep=''),
                             sliderInput(inputId="lastYwho",label="Last year output",value=termYear,min=fy_year_hist+5,max=termYear,step=1,sep='')
@@ -699,7 +708,7 @@ ui <- navbarPage(title = "SMS",
                                                              width = 1350, height=700,units = "px", pointsize = 25, bg = "white")
    
    output$whoEats_plot <- renderPlot({whoPlot<<-plot_who_eats(res$rv$out$detail_eaten,pred=input$whoPred,prey=input$whoPrey,predPrey=input$"whoPredPrey",
-                                                     years=c(input$firstYwho,input$lastYwho),exclHumans=(input$whoHuman=='Excl. catch'));whoPlot})
+                                                     years=c(input$firstYwho,input$lastYwho),exclHumans=(input$whoHuman=='Excl. catch'),exclResidM1=(input$whoResidual=='Excl. M1'));whoPlot})
    
    output$FoodWeb_plot <- renderSankeyNetwork({foodWebPlot<<-FoodWeb_plot(res$rv$out$detail_eaten,year=input$yearFoodWeb,incl_sp=input$foodWebSp );foodWebPlot})
  
@@ -805,7 +814,7 @@ ui <- navbarPage(title = "SMS",
    observeEvent(input$rv, {
      annExplPat[paste('age',as.character(first.age:last.age[input$exSpecies])),input$exSpecies]<<-input$rv
      doWriteExplPattern<<-TRUE
-     updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("refresh"))
+     updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("sync"))
    })
    
   #####
@@ -889,17 +898,17 @@ ui <- navbarPage(title = "SMS",
      OP@output<<-26  #both condensed and annual and quarterly  output and M2
      res$rv$out<-do_OP(readResSimple=TRUE,readResDetails=TRUE,readResStom=TRUE,writeOption=TRUE,writeExplPat=doWriteExplPattern,source='push DetailedM2')
      removeModal()
-     updateSelectInput(session,inputId="whoPred",choices=c('all predators',tail(res$rv$out$pred,-1)))
+     updateSelectInput(session,inputId="whoPred",choices=c('all predators',res$rv$out$pred))
      updateSelectInput(session,inputId="whoPrey",choices=c('all preys',res$rv$out$prey))
    }
   
    observeEvent(input$whoPred,{if (input$whoPred !='all predators') updateSelectInput(session,inputId="whoPrey",choices=c('all preys',res$rv$out$predPrey[[input$whoPred]])) })
    
+   observeEvent(input$whoHuman,{if (input$whoHuman =='Excl. catch') updateSelectInput(session,inputId="whoPred",choices=c('all predators',res$rv$out$pred)) })
    
-   observeEvent(input$whoHuman,{if(input$whoHuman=='Excl. catch') choi<-c('all predators',tail(res$rv$out$pred,-1)) else choi<-c('all predators',res$rv$out$pred);
-                                updateSelectInput(session,inputId="whoPred",choices=choi)})
    
-  
+
+   
    observeEvent(input$detailed_predict,{
      if (input$detailed_predict=='Results by year') doUpdateDetails() else if (input$detailed_predict=='Who eats whom' | input$detailed_predict=="Food web") doUpdateDetailsM2()
     })
@@ -940,11 +949,11 @@ ui <- navbarPage(title = "SMS",
   
 
   observeEvent(input$updateOptionTableOther,{
-    updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("refresh"))
+    updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("sync"))
   })
   
   observeEvent(input$updateOptionTable,{
-    updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("refresh"))
+    updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("sync"))
   })
   
 
@@ -965,7 +974,7 @@ ui <- navbarPage(title = "SMS",
        termYear<<-input$finalYear
        doWriteOptions<<-TRUE
        doRunModel<<-TRUE
-       updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("refresh"))
+       updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("sync"))
        OP@last.year<<-termYear
        OP.trigger@last.year<<-termYear
        updateSliderInput(session,inputId="lastY",max=input$finalYear)
@@ -975,7 +984,7 @@ ui <- navbarPage(title = "SMS",
    if (input$recDetSto != recruitMode) {
      doWriteOptions<<-TRUE
      doRunModel<<-TRUE
-     updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("refresh"))
+     updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("sync"))
      
      if (input$recDetSto=='Determenistic') {
        OP@stochastic.recruitment[1,]<<- rep(0,n.VPA)

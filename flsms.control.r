@@ -1133,7 +1133,6 @@ write.FLSMS.control<-function(control,file="sms.dat",path=NULL,write.multi=TRUE,
 }
 
 read.FLSMS.control<-function(dir='.',file="sms.dat",test=FALSE) {       
-  #print(file.path(dir,file))
   opt<-scan(file=file.path(dir,file), comment.char = "#",quiet=T) 
    
   n<-1

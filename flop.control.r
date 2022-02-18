@@ -189,7 +189,6 @@ FLOP.control <- function(
           no.VPA.sp<-no.species-no.other.predators
           no.predators<-no.other.predators+no.VPA.predators
         }
-        #print(no.predators);  print(no.other.predators)  ; print(no.VPA.predators)
         
         if (species.names[1] != c("sp1") & length(species.names)!=no.species) 
               stop("no.species is different from number of species names")
