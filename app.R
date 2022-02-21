@@ -100,12 +100,19 @@ status_quo<-read_csv(file=file.path(data_dir,'status_quo.csv'),col_types = cols(
 histAnnoM<-read_csv(file=file.path(data_dir,'hist_anno_M.csv'),col_types = cols()) %>%mutate(Species=spNames[Species.n])
 
 histCondensed<-read_csv(file=file.path(data_dir,'hist_condensed.csv'),col_types = cols())%>%mutate(Species=spNames[Species.n]) %>%
-  mutate(Recruits=Recruits*plotUnits['Recruits'],SSB=SSB*plotUnits['SSB'],TSB=TSB*plotUnits['TSB'],Yield=Yield*plotUnits['Yield'],
-         Fbar=Fbar*plotUnits['Fbar'],DeadM1=DeadM1*plotUnits['DeadM'],DeadM2=DeadM2*plotUnits['DeadM'])
+  mutate(Recruits=Recruits*plotUnits['Recruits'],SSB=SSB*plotUnits['SSB'],TSB=TSB*plotUnits['TSB'],
+         Yield=Yield*plotUnits['Yield'],yield.core=yield.core*plotUnits['Yield'],
+         Fbar=Fbar*plotUnits['Fbar'],
+         DeadM1=DeadM1*plotUnits['DeadM'],DeadM2=DeadM2*plotUnits['DeadM'],
+         DeadM1.core=DeadM1.core*plotUnits['DeadM'],DeadM2.core=DeadM2.core*plotUnits['DeadM'])
 
 histEaten <- read_csv(file=file.path(data_dir,'who_eats_whom_historical.csv'),col_types = cols()) %>%
               mutate(Predator=parse_factor(Predator,levels=predPreyFormat),Prey=parse_factor(Prey,levels=predPreyFormat),eatenW=eatenW*plotUnits['DeadM'])
 
+if (FALSE) {
+  unique(histEaten$Predator) %in% predPreyFormat
+  unique(histEaten$Prey) %in% predPreyFormat
+}
 
 refPoints<-matrix(scan(file.path(data_dir,"op_reference_points.in"),quiet = TRUE, comment.char = "#"),ncol=4,byrow=TRUE)
 rownames(refPoints)<-VPA.spNames
@@ -221,7 +228,7 @@ op.n<-0 #counter for calls to op.exe, used for tests only
 # call to the OP program
 do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeOption=FALSE,writeExplPat=FALSE,source='') {
   op.n<<-op.n+1
-  #cat(op.n, "call source:", source, " readResSimple:",readResSimple," readResDetails:",readResDetails," readResStom:",readResStom," writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
+  cat(op.n, "call source:", source, " readResSimple:",readResSimple," readResDetails:",readResDetails," readResStom:",readResStom," writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
   
    # write the F values
    Fvalues<-OP.trigger@Ftarget['init',]
@@ -269,18 +276,21 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
   if (readResDetails)  {
     d<-read.table(file.path(data_dir,'op_condensed_long.out'),header=T)
     d1<-data.frame(Year=d$Year, Species=spNames[d$Species.n], Species.n=d$Species.n,
-                   Yield=d$yield*plotUnits['Yield'],Fbar=d$Fbar*plotUnits['Fbar'], 
-                   SSB=d$SSB*plotUnits['SSB'], TSB=d$TSB*plotUnits['SSB'],Recruits=d$recruit*plotUnits['Recruits'], 
-                   DeadM1=(d$DeadM-d$DeadM2)*plotUnits['DeadM'], DeadM2=d$DeadM2*plotUnits['DeadM'])
+                   Yield=d$yield*plotUnits['Yield'],yield.core=d$CWsum.core*plotUnits['Yield'],
+                   Fbar=d$Fbar*plotUnits['Fbar'], 
+                   SSB=d$SSB*plotUnits['SSB'], TSB=d$TSB*plotUnits['SSB'],
+                   Recruits=d$recruit*plotUnits['Recruits'], 
+                   DeadM1=(d$DeadM-d$DeadM2)*plotUnits['DeadM'], DeadM2=d$DeadM2*plotUnits['DeadM'],
+                   DeadM1_core=(d$DeadM_core-d$DeadM2_core)*plotUnits['DeadM'], DeadM2_core=d$DeadM2_core*plotUnits['DeadM'])
     if (recruitMode=='Stochastic'){
       a<-subset(d1,Year>=max(termYear+1,(termYear-10)),select= -Species)
-      a<-aggregate(cbind(Yield,Fbar,SSB,TSB,Recruits,DeadM1,DeadM2)~Species.n,data=d1,FUN=mean)
+      a<-aggregate(cbind(Yield,yield.core,Fbar,SSB,TSB,Recruits,DeadM1,DeadM2)~Species.n,data=d1,FUN=mean)
       #format for ggradar
       b<-t(a)
       colnames(b)<-VPA.spNames
       b<-mutate(as_tibble(b),variable=rownames(b)) %>%select(c("variable",all_of(VPA.spNames))) %>%subset(variable!="Species.n") 
       a$Species<-VPA.spNames
-      a<-select(as_tibble(a),Species,Yield,Fbar,SSB,TSB,Recruits)
+      a<-select(as_tibble(a),Species,Yield,yield.core,Fbar,SSB,TSB,Recruits)
     }
     d<-read.table(file.path(data_dir,'op_anno_M.out'),header=T)
     d2<-data.frame(Year=d$Year, Species=spNames[d$Species.n], Species.n=d$Species.n,Age=d$Age, M2=d$M2)
@@ -289,22 +299,26 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
   if (readResStom){
     s<-read.table(file.path(data_dir,'op_summary.out'),header=T)
     s$Species<-spNames[s$Species.n]
-    s<-subset(s, select=c(Species,Year,Quarter,Species.n,Age,M1,M2,Nbar,west,Yield))
-    s<-data.frame(s,deadM1=s$M1*s$Nbar*s$west,deadM2=s$M2*s$Nbar*s$west,yield=s$Yield)
-    s<-subset(s,select=c(Species, Year, Quarter, Species.n, Age, M2,deadM1,deadM2,yield))
+    s<-subset(s, select=c(Species,Year,Quarter,Species.n,Age,M1,M2,Nbar,N_prop_M2,west,CWsum.core))
+    s<-data.frame(s,deadM1_core=s$M1*s$Nbar*s$west*s$N_prop_M2, 
+                    deadM2_core=s$M2*s$Nbar*s$west*s$N_prop_M2, 
+                    yield=s$CWsum.core)
+    s<-subset(s,select=c(Species, Year, Quarter, Species.n, Age, M2,deadM1_core,deadM2_core,yield))
 
-    r<-data.frame(Predator=predPreyFormat[1], Year=s$Year,Predator.no=-1,Prey=s$Species,Prey.no=s$Species.n,eatenW=s$deadM1, stringsAsFactors = FALSE)
+    #predator Residual mortality within model area 
+    r<-data.frame(Predator=predPreyFormat[1], Year=s$Year,Predator.no=-1,Prey=s$Species,Prey.no=s$Species.n,eatenW=s$deadM1_core, stringsAsFactors = FALSE)
     r<-aggregate(r$eatenW,list(r$Predator,r$Predator.no,r$Year,r$Prey,r$Prey.no),sum)
     names(r)<-c("Predator","Predator.no","Year","Prey","Prey.no","eatenW")
+    r$eatenW<-r$eatenW*plotUnits['DeadM']
     
+    # predator humans  within model area 
     h<-data.frame(Predator=predPreyFormat[2], Year=s$Year,Predator.no=0,Prey=s$Species,Prey.no=s$Species.n,eatenW=s$yield, stringsAsFactors = FALSE)
     h<-aggregate(h$eatenW,list(h$Predator,h$Predator.no,h$Year,h$Prey,h$Prey.no),sum)
     names(h)<-c("Predator","Predator.no","Year","Prey","Prey.no","eatenW")
+    h$eatenW<-h$eatenW*plotUnits['Yield']
     
     r<-bind_rows(r,h)
-    r$eatenW<-r$eatenW*plotUnits['DeadM']
-  
-    
+ 
     M2<-read.table(file.path(data_dir,'op_part_m2.out'),header=T)
     M2$Area<-NULL
     M2<-data.frame(Predator=spNames[M2$Predator.no],Prey=spOtherNames[M2$Prey.no+1],M2) 
@@ -328,8 +342,6 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     
     s<-bind_rows(s,r)
    
-
-        
     # make unique format/factors  for predator and preys
     prey<-unique(data.frame(no=s$Prey.no,Species=s$Prey, stringsAsFactors = FALSE))
     pred<-unique(data.frame(no=s$Predator.no,Species=s$Predator, stringsAsFactors = FALSE))

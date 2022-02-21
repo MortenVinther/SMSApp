@@ -10,8 +10,8 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
   b<-subset(res$out$detail_M2,Year>=years[1] & Year<=years[2] & Species %in% species)
   b2<-subset(histAnnoM,Year>=years[1] & Year<=years[2] & Species %in% species)
   b<-bind_rows(b,b2) %>% arrange(Year,Age)
-  
-   if ("SSB" %in% ptype) {
+
+  if ("SSB" %in% ptype) {
     pSSB<-ggplot(a,aes(x=Year,y=SSB))+
     geom_line(lwd=1.5)+
     geom_point(shape = 21, colour = "black", fill = "white", size = 2, stroke = 1.5)+
@@ -51,7 +51,7 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
      }
   } 
   
-  if ("Yield" %in% ptype) {
+  if ("Yield_old" %in% ptype) {
     y <-aggregate(Yield~Year,data=a,sum)
     pY<-ggplot(y,aes(x=Year,y=Yield)) +
       geom_bar(stat = "identity")+
@@ -60,12 +60,28 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
     if (splitLine) pY<- pY+geom_vline(xintercept=stq_year,col='blue',lty=3,lwd=1)
   }  
   
+  
+  if ("Yield" %in% ptype) {
+    y<-select(a,Year,Yield,yield.core) %>% mutate(yield.outside=Yield-yield.core,Yield=NULL) %>% select(Year,yield.outside,yield.core)
+    print(y)
+    y<-as.data.frame(y)
+    if (any(y$yield.outside>0)) titl<-'Catch inside and outside the North Sea' else titl<-'Catch'
+    y<-reshape(y,direction='long',varying = list(2:3))
+    print(y)
+   
+    pY<-ggplot(y, aes(x = Year, y = yield.outside, fill = as.factor(time)) )+
+      geom_bar(stat = "identity")+ 
+      labs(x='',y=plotLabels['Yield'],title=titl)+
+      theme(plot.title = element_text(size = 16, face = "bold"),legend.position="none")
+    
+    if (splitLine) pY<- pY+geom_vline(xintercept=stq_year,col='blue',lty=3,lwd=1)
+  }  
+  
   if ("Dead" %in% ptype) {
     y<-select(a,Year,Yield,DeadM1,DeadM2)
     y<-as.data.frame(y)
     if (any(y$DeadM2>0)) titl<-'Biomass removed\ndue to F, M1 and M2' else titl<-'Biomass removed\ndue to F and M1'
     y<-reshape(y,direction='long',varying = list(2:4))
-    
     pD<-ggplot(y, aes(x = Year, y = Yield, fill = as.factor(time)) )+
        geom_bar(stat = "identity")+ 
        labs(x='',y=plotLabels['DeadM'],title=titl)+
@@ -182,6 +198,8 @@ plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHuman
   } else tit<-paste(tit,'all predators')
   p<-unique(x$Predator)
   pred_pp<-pp[predPreyFormat %in% p]
+  
+  if (dim(x)[[1]]==0) return(NULL)
   
   if (predPrey=='by prey') {
     pp<-prey_pp
