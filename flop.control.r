@@ -189,6 +189,7 @@ FLOP.control <- function(
           no.VPA.sp<-no.species-no.other.predators
           no.predators<-no.other.predators+no.VPA.predators
         }
+        #print(no.predators);  print(no.other.predators)  ; print(no.VPA.predators)
         
         if (species.names[1] != c("sp1") & length(species.names)!=no.species) 
               stop("no.species is different from number of species names")
@@ -662,8 +663,7 @@ write.FLOP.control<-function(control,file="op.dat",path=NULL,nice=TRUE,writeSpNa
                                 cat("#### %%%%%%%%%%%%% various for other predators %%%%%%%%%%%%%%%%%%% ###\n",
                                     "# annual change factor for population number\n",
                                     "# first year year of change  (-1 is no change)\n",
-                                    "# last year  of change (-1 is no change)\n",
-                                    "# other predator stock numbers  \n",file=file,append=T,sep="")
+                                    "# last year  of change (-1 is no change)\n",file=file,append=T,sep="")
                                     wr.matrix.nice(slot(control,x),sp.names[1:(first.VPA-1)])
                                 } else wr.matrix(slot(control,x),x)
                              }
@@ -769,7 +769,7 @@ read.FLOP.control<-function(file="op.dat",path=data.path,n.VPA,n.other.pred,n.pr
      "F.or.C"                  ={slot(control,x)<-matrix(opt[n:(n-1+n.VPA)],ncol=n.VPA,nrow=1,dimnames=list(" ",VPA.sp.names)); n<-n+n.VPA},
      "years.other"             = {slot(control,x)<-matrix(opt[n:(n-1+2*n.other.pred)],ncol=n.other.pred,nrow=2,
                                    dimnames=list(c("first","last"),species.names[1:n.other.pred]),byrow=TRUE); n<-n+2*n.other.pred},
-     "other.predator"          = {if (n.other.pred>1) {
+     "other.predator"          = {if (n.other.pred>=1) {
                                    slot(control,x)<-matrix(opt[n:(n-1+3*n.other.pred)],ncol=n.other.pred,nrow=3,
                                    dimnames=list(c("factor","first","second"),species.names[1:n.other.pred]),byrow=TRUE); n<-n+3*n.other.pred
                                  }

@@ -1,0 +1,41 @@
+#options and data for optimationzation
+# the character "#" is used as comment character, such that all text and numbers after # are skipped
+#
+2022 	# first.year 
+2061 	# last.year 
+1 	# first.run.no 
+1 	# first.iter.no 
+1 	# no.iter 
+#  HCR 
+1 1 
+#  trigger 
+0 175000 
+460000 570000 
+#  Ftarget 
+0 0 
+3 3 
+0.315591 0.24121 
+1 1 
+#  Fslope 
+0.1 0.1 
+0.1 0.1 
+0.1 0.1 
+1 1 
+#  SSB50 
+100 100 
+300 140 
+200 120 
+1 1 
+#  S1 
+1 1 
+30 14 
+20 12 
+1 1 
+#  SSBpenalty 
+1 1 
+2e+05 1e+05 
+204000 102000 
+1e+07 1e+07 
+#  weighting 
+1 1 
+0 	# at.age.weighting 

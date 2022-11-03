@@ -12,7 +12,7 @@ library(RColorBrewer)
 library("cowplot")
 library("shinyWidgets")
 
-#devtools::install_github("ricardo-bion/ggradar", dependencies = TRUE)
+# devtools::install_github("ricardo-bion/ggradar", dependencies = TRUE)
 library(ggradar)
 
 # Sankey diagram
@@ -25,184 +25,55 @@ suppressMessages(library(htmlwidgets))
 
 source("dragables.R")
 
-
-## Global
-data_dir <- "Data"
-help_dir <-"helpfiles"
-OS<- .Platform$OS.type  #operating system
-
-# reset option files to default values
-file.copy(file.path(data_dir,'op_config_master.dat'),file.path(data_dir,'op_config.dat'),overwrite = TRUE)
-file.copy(file.path(data_dir,'op_exploitation_master.in'),file.path(data_dir,'op_exploitation.in'),overwrite = TRUE)
-
-
-# control objects for predictions
-data.path<-data_dir # used by the control objects
-source("flsms.control.r") # to handle file SMS.dat with options for running SMS in hindcast and producing data for forecast
-
-SMS<-read.FLSMS.control(file='sms.dat',dir=data_dir)
-#get information from SMS run
-n.species.tot <- SMS@no.species  # number of species including "other predators"
-n.pred.other<-sum(SMS@species.info[,'predator']==2) #number of "other predators"
-n.VPA<-n.species.tot-n.pred.other #number of species with analytical assessment
-n.pred<-n.pred.other+sum(SMS@species.info[,'predator']==1) # number of predators
-n.fleet <- n.VPA   # in this case it is just the number of species, one "fleet" per species
-stq_year<-SMS@last.year.model
-fy_year_hist<-SMS@first.year.model
-n.seasons<-SMS@last.season
-first.age<-SMS@first.age
-max.age<-SMS@max.age.all
-n.age<-max.age-first.age+1
-spNames<-SMS@species.names
-
-firstVPA<-n.species.tot-n.VPA+1   #first species with analytical assessment
-VPA.spNames<-spNames[firstVPA:n.species.tot]
-spOtherNames<-c('Other.food',spNames)
-other.spNames<-spNames[1:n.pred.other]
- 
-
+### Constants  and (invariant) source codes ####
 my.colors<-c('grey15','grey85','red','green','plum','blue','cyan','yellow','coral','skyblue','purple','magenta',
              'limegreen','pink','darkorange3','aquamarine','beige','darkslategray','brown1','blueviolet','chocolate1' )
 
-# group predator names for eaten biomass
-pred_format<-read.csv(file.path(data_dir,'pred_format.csv'),header=TRUE, stringsAsFactors = FALSE)
-#pp<-unique(subset(pred_format,new_no>=0,select=c(new,new_no,group,is.predator,is.prey)))
-pp<-unique(subset(pred_format,select=c(new,new_no,group)))
-pp<-pp[order(pp$new_no),]
-predPreyFormat<-pp$new
-pp_short<-filter(pp,new_no >=0) 
+help_dir <-"helpfiles"
+OS<- .Platform$OS.type  #operating system
 
-recruitMode<-c('Determenistic','Stochastic')[1]
-
-
-# options for predictions, reset from master version
+source("flsms.control.r") # to handle file SMS.dat with options for running SMS in hindcast and producing data for forecast
 source("flop.control.r")
 
-OP<-read.FLOP.control(file="op_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other,n.pred=n.pred)
-OP.trigger<-read.FLOPtrigger.control(file="op_trigger_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other)
+source('make_plots.R',local=TRUE)
 
+## end Constants #####
 
+## Global
+op.n<-0 #counter for calls to op.exe, used for tests only
+area.change.no<-0
+refreshed<-TRUE
 
-# read units and label used for plots etc.
-a<-read_csv(file=file.path(data_dir,'units.csv'),col_types = cols()) 
-plotUnits<-a$plotUnits; names(plotUnits)<-a$type
-plotLabels<-a$plotLabels; names(plotLabels)<-a$type
-plotLabels[is.na(plotLabels)]<-" "              
-roundUnits<-a$roundUnits; names(roundUnits)<-a$type
-rm(a)
-
-# read status quo values (= values in the terminal hindcast SMS model year)  
-status_quo<-read_csv(file=file.path(data_dir,'status_quo.csv'),col_types = cols()) %>%
-  mutate(Rec=Rec*plotUnits['Recruits'],SSB=SSB*plotUnits['SSB'],TSB=TSB*plotUnits['TSB'],SOP=SOP*plotUnits['Yield'],
-         Yield=Yield*plotUnits['Yield'],mean.F=mean.F*plotUnits['Fbar'],Eaten=Eaten*plotUnits['DeadM'])
-
-# read hindcast SMS values  
-histAnnoM<-read_csv(file=file.path(data_dir,'hist_anno_M.csv'),col_types = cols()) %>%mutate(Species=spNames[Species.n])
-
-histCondensed<-read_csv(file=file.path(data_dir,'hist_condensed.csv'),col_types = cols())%>%mutate(Species=spNames[Species.n]) %>%
-  mutate(Recruits=Recruits*plotUnits['Recruits'],SSB=SSB*plotUnits['SSB'],TSB=TSB*plotUnits['TSB'],
-         Yield=Yield*plotUnits['Yield'],yield.core=yield.core*plotUnits['Yield'],
-         Fbar=Fbar*plotUnits['Fbar'],
-         DeadM1=DeadM1*plotUnits['DeadM'],DeadM2=DeadM2*plotUnits['DeadM'],
-         DeadM1.core=DeadM1.core*plotUnits['DeadM'],DeadM2.core=DeadM2.core*plotUnits['DeadM'])
-
-histEaten <- read_csv(file=file.path(data_dir,'who_eats_whom_historical.csv'),col_types = cols()) %>%
-              mutate(Predator=parse_factor(Predator,levels=predPreyFormat),Prey=parse_factor(Prey,levels=predPreyFormat),eatenW=eatenW*plotUnits['DeadM'])
-
-if (FALSE) {
-  unique(histEaten$Predator) %in% predPreyFormat
-  unique(histEaten$Prey) %in% predPreyFormat
-}
-
-refPoints<-matrix(scan(file.path(data_dir,"op_reference_points.in"),quiet = TRUE, comment.char = "#"),ncol=4,byrow=TRUE)
-rownames(refPoints)<-VPA.spNames
-colnames(refPoints)<-c('Flim','Fpa','Blim','Bpa')
-refPoints[,3:4] <- refPoints[,3:4]* plotUnits['SSB']
-
-explPat<-scan(file.path(data_dir,"op_exploitation.in"),quiet = TRUE, comment.char = "#")
-explPat<-array(explPat,dim=c(n.age,n.VPA,n.seasons),dimnames=list(paste('age',as.character(first.age:max.age)),VPA.spNames,paste0('Q_',1:n.seasons)))
-annExplPat<-apply(explPat,c(1,2),sum) # annual exploitation pattern
-Fages<-SMS@avg.F.ages
-Fages
-#avExplPat<-sapply(rownames(Fages),function(sp) mean(annExplPat[as.character(Fages[sp,1]:Fages[sp,2]),sp]))
-
-last.age<-SMS@species.info[VPA.spNames,'last-age']
-first.age
-
-
-
-
-# SMS output values in the last year
-base_SSB<-stqSSB<-status_quo$SSB
-base_F<-stqF<-status_quo$mean.F
-#stqF<-status_quo$sum.q.F
-base_Yield<-stqYield<-status_quo$Yield
-base_Rec<-stqRec<-status_quo$Rec
-
-# write status quo F
-#cat("1\n",base_F,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values
-
-# read various setting for options files
-hcr_ini<-read.csv(file.path(data_dir,'HCR_ini.csv'),header=TRUE,stringsAsFactors = FALSE)
-
-### change option values (could have been done in the master files!)
-OP@rec.noise['lower',]<-hcr_ini$noise.low
-OP@rec.noise['upper',]<-hcr_ini$noise.high
-OP@recruit.adjust.CV[1,]<-hcr_ini$rec.adjust.CV.single
-OP@recruit.adjust[1,]<-hcr_ini$rec.adjust.single
-#
-OP.trigger@Ftarget['init',]<-base_F
-OP.trigger@trigger['T1',]<-hcr_ini$T1
-OP.trigger@trigger['T2',]<-hcr_ini$T2
-OP.trigger@HCR[1,]<-1
+####  functions #####
+# Data for table with the most important data
+makeResTable<-function(x){
+  a<-data.frame(Species=VPA.spNames,
+                F_base=round(x$baseLine[,'Fbar'],3),
+                F_new=round(x$out$a[,'Fbar'],roundUnits['Fbar']),
+                F_change=(x$out$a[,'Fbar']-x$baseLine[,'Fbar'])/x$baseLine[,'Fbar'],
+                Yield_base=round(x$baseLine[,'Yield'],3),
+                Yield_new=round(x$out$a[,'Yield'],roundUnits['Yield']),
+                Y_change=(x$out$a[,'Yield']-x$baseLine[,'Yield'])/x$baseLine[,'Yield'],
+                SSB_base=round(x$baseLine[,'SSB'],roundUnits['SSB']),
+                SSB_new=round(x$out$a[,'SSB'],roundUnits['SSB']),
+                SSB_change=(x$out$a[,'SSB']-x$baseLine[,'SSB'])/x$baseLine[,'SSB'],
+                rec_base=round(x$baseLine[,'Recruits'],roundUnits['Recruits']),
+                rec_new=round(x$out$a[,'Recruits'],roundUnits['Recruits']))
   
-
-# write option files to be used
-write.FLOP.control(OP,file=file.path(data_dir,"op.dat"),nice=TRUE)
-write.FLOPtrigger.control(OP.trigger,file="op_trigger.dat",path=data_dir, nice=TRUE)
-
-
-fleetNames<-paste0('fl_',VPA.spNames) # just this special case where we have no fleets
-
-#recruitment parameters from op_config.dat
-rec<-readLines(file.path(data_dir,"op_config.dat"))
-found<-grep("#model alfa  beta std info1 info2",rec)
-rec<-scan(file.path(data_dir,"op_config.dat"),skip=found,comment.char = "#",nlines=n.VPA,quiet = TRUE)
-rec<-matrix(rec,nrow=n.VPA,byrow=TRUE)
-colnames(rec)<-c('model','a','b','s','o1','o2')
-rownames(rec)<-VPA.spNames
-
-# maximum recruits
-max_rec<-rep(0,n.VPA);names(max_rec)<-VPA.spNames
-i<-rec[,'model']==100;max_rec[i]<-exp(rec[i,'a'])*rec[i,'b']  # Hockey stick
-i<-rec[,'model']==1;  max_rec[i]<-rec[i,'a']/(rec[i,'b']*exp(1))  # Ricker
-i<-rec[,'model']==2;  max_rec[i]<-rec[i,'a']/rec[i,'b']  # B & H
-i<-rec[,'model']==3;  max_rec[i]<-exp(rec[i,'a'])  # GM
-i<-OP@recruit.adjust.CV==2; max_rec[i]<-max_rec[i]*exp((rec[i,'s']^2)/2)
-max_rec<-max_rec*plotUnits['Recruits']
-
-# values for baselines option lists
-bsF<-list(Names=list('No change',paste0('F(',stq_year,')'),'Most recent results'),Values=list(0,1,2))
-bsSSB<-list(Names=list('No change',paste0('SSB(',stq_year,')'),'Most recent results'),Values=list(0,1,2))
-bsYield<-list(Names=list('No change',paste0('Yield(',stq_year,')'),'Most recent results'),Values=list(0,1,2))
-bsRec<-list(Names=list('No change',paste0('Recruitment(',stq_year,')'),'Most recent results','Maximum recrutiment'),Values=list(0,1,2,3))
-
-
-F_mult<-1.0  
-
-Fvalues<-stqF*F_mult
-
-oldwd<-getwd()
-
-# command file for executing the OP program to make a prediction
-cmd <- paste0('cd "', file.path(oldwd,data_dir), '" &&  "./op" -maxfn 0 -nohess > ud.dat')
-## cat("cd ",file.path(oldwd,data_dir),"\n '.\op' -maxfn 0 -nohess > ud.dat\n",  file=file.path(oldwd,data_dir,"run_op.bat"))
+  colnames(a)<-c("Species",'F base',                                  paste0('F(',termYear,')'),                         'F change',
+                 paste0('Yield base',plotLabels['Yield']),  paste0('Yield(',termYear,')', plotLabels['Yield']),'Yield change',
+                 paste0('SSB base', plotLabels['SSB']),     paste0('SSB(',termYear,') ',  plotLabels['SSB']),  'SSB change',
+                 paste0('Rec. base',plotLabels['Recruits']),paste0('Rec(',termYear,') ',  plotLabels['Recruits']))
+  return(a)
+}
 
 do_baseLine<-function(){
   baseLine=cbind(SSB=base_SSB,Fbar=base_F,Yield=base_Yield,Recruits=base_Rec)
   rownames(baseLine)<-VPA.spNames
   return(baseLine)
 }
+
+
 
 
 updateExplPatttern<-function(explPat) {
@@ -217,53 +88,49 @@ updateExplPatttern<-function(explPat) {
   
   # recalculate annual exploitation pattern
   annExplPat<<-apply(explPat,c(1,2),sum) 
-
+  
   return(explPat)
 }
-
-
-
-op.n<-0 #counter for calls to op.exe, used for tests only
 
 # call to the OP program
 do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeOption=FALSE,writeExplPat=FALSE,source='') {
   op.n<<-op.n+1
-  cat(op.n, "call source:", source, " readResSimple:",readResSimple," readResDetails:",readResDetails," readResStom:",readResStom," writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
+  cat(op.n, "call source:", source, "  ,data_dir:",data_dir,"  ,readResSimple:",readResSimple," ,readResDetails:",readResDetails," ,readResStom:",readResStom," ,writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
   
-   # write the F values
-   Fvalues<-OP.trigger@Ftarget['init',]
-   #cat("1\n",Fvalues,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values
-
-   if (writeOption) {  #write option files
-     write.FLOP.control(OP,file="op.dat",path=data_dir,nice=TRUE,writeSpNames=FALSE)   
-     write.FLOPtrigger.control(OP.trigger,file="op_trigger.dat",path=data_dir,nice=FALSE,writeSpNames=FALSE)
-     doWriteOptions<<-FALSE
-   } 
-   
-   if (writeExplPat){
-     explPat<<-updateExplPatttern(explPat)
-
-     out<-file.path(data_dir,'op_exploitation.in')
-     cat("# exploitation pattern\n",file=out)
-     for (q in (1:n.seasons)) {
-       cat(paste("# quarter",q,'\n'),file=out,append=TRUE)
-       write.table(t(explPat[,,q]),col.names=FALSE, row.names=FALSE,file=out,append=TRUE)
-     }
-     doWriteExplPattern<<-FALSE
-   }  
-   
-   # run the script
-   if(OS == "windows") shell(cmd)
-   if(OS == "unix") system(cmd)
-     
-   
-   doRunModel<<-FALSE
+  # write the F values
+  Fvalues<-OP.trigger@Ftarget['init',]
+  cat("1\n",Fvalues,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values
+  
+  if (writeOption) {  #write option files
+    write.FLOP.control(OP,file="op.dat",path=data_dir,nice=TRUE,writeSpNames=FALSE)   
+    write.FLOPtrigger.control(OP.trigger,file="op_trigger.dat",path=data_dir,nice=FALSE,writeSpNames=FALSE)
+    doWriteOptions<<-FALSE
+  } 
+  
+  if (writeExplPat){
+    explPat<<-updateExplPatttern(explPat)
+    
+    out<-file.path(data_dir,'op_exploitation.in')
+    cat("# exploitation pattern\n",file=out)
+    for (q in (1:n.seasons)) {
+      cat(paste("# quarter",q,'\n'),file=out,append=TRUE)
+      write.table(t(explPat[,,q]),col.names=FALSE, row.names=FALSE,file=out,append=TRUE)
+    }
+    doWriteExplPattern<<-FALSE
+  }  
+  
+  # run the script
+  if(OS == "windows") shell(cmd)
+  if(OS == "unix") system(cmd)
+  
+  
+  doRunModel<<-FALSE
   
   #read the results
   if (readResSimple) {
     a<-read.table(file.path(data_dir,'op_condensed.out'),header=T)
     a<-data.frame(Species.n=a$Species.n,Yield=a$yield*plotUnits['Yield'],Fbar=a$Fbar*plotUnits['Fbar'], SSB=a$SSB*plotUnits['SSB'], TSB=a$TSB*plotUnits['TSB'],Recruits=a$recruit*plotUnits['Recruits'])
-  
+ 
     
     #format for ggradar
     b<-t(a)
@@ -301,10 +168,10 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     s$Species<-spNames[s$Species.n]
     s<-subset(s, select=c(Species,Year,Quarter,Species.n,Age,M1,M2,Nbar,N_prop_M2,west,CWsum.core))
     s<-data.frame(s,deadM1_core=s$M1*s$Nbar*s$west*s$N_prop_M2, 
-                    deadM2_core=s$M2*s$Nbar*s$west*s$N_prop_M2, 
-                    yield=s$CWsum.core)
+                  deadM2_core=s$M2*s$Nbar*s$west*s$N_prop_M2, 
+                  yield=s$CWsum.core)
     s<-subset(s,select=c(Species, Year, Quarter, Species.n, Age, M2,deadM1_core,deadM2_core,yield))
-
+    
     #predator Residual mortality within model area 
     r<-data.frame(Predator=predPreyFormat[1], Year=s$Year,Predator.no=-1,Prey=s$Species,Prey.no=s$Species.n,eatenW=s$deadM1_core, stringsAsFactors = FALSE)
     r<-aggregate(r$eatenW,list(r$Predator,r$Predator.no,r$Year,r$Prey,r$Prey.no),sum)
@@ -318,7 +185,7 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     h$eatenW<-h$eatenW*plotUnits['Yield']
     
     r<-bind_rows(r,h)
- 
+    
     M2<-read.table(file.path(data_dir,'op_part_m2.out'),header=T)
     M2$Area<-NULL
     M2<-data.frame(Predator=spNames[M2$Predator.no],Prey=spOtherNames[M2$Prey.no+1],M2) 
@@ -332,7 +199,7 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     
     bbb<-droplevels(aggregate(list(eatenW=M2$eatenW),list(Year=M2$Year, Predator=M2$Predator,Prey=M2$Prey,Prey.no=M2$Prey.no),sum))
     bbb$eatenW<-bbb$eatenW*plotUnits['DeadM']
-
+    
     s<-merge(x=bbb,y=pred_format,by.x='Prey',by.y='old',all.x=TRUE)
     s$Prey<-s$new; s$new<-NULL
     s$Prey.no<-s$new_no; s$new_no<-NULL
@@ -341,56 +208,38 @@ do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeO
     names(s)<-c("Predator","Year","Predator.no","Prey","Prey.no","eatenW")
     
     s<-bind_rows(s,r)
-   
+    
     # make unique format/factors  for predator and preys
     prey<-unique(data.frame(no=s$Prey.no,Species=s$Prey, stringsAsFactors = FALSE))
     pred<-unique(data.frame(no=s$Predator.no,Species=s$Predator, stringsAsFactors = FALSE))
-
-
+    
+    
     prey<-prey[order(prey$no,decreasing = FALSE),]
     prey<-prey$Species
-
+    
     pred<-pred[order(pred$no,decreasing = FALSE),]
     pred<-pred$Species
     
-     
+    
     s<- mutate(as_tibble(s),Predator=parse_factor(Predator,levels=predPreyFormat),Prey=parse_factor(Prey,levels=predPreyFormat))
- 
+    
     predPrey<-lapply(pred,function(x) {a<-filter(s,Predator==x) %>% distinct(Prey);as.character(unlist(a))})
     names(predPrey)<-pred
     
     
   } else  { s<-'No data';pred<-'No data'; prey<-'No data'; predPrey<-'No data'}
   return(list(options=list(readResSimple=readResSimple,readResDetails=readResDetails,readResStom=readResStom,source=source),
-                a=a,b=b,detail_sum=d1,detail_M2=d2,detail_eaten=s,pred=pred,prey=prey,predPrey=predPrey))
+              a=a,b=b,detail_sum=d1,detail_M2=d2,detail_eaten=s,pred=pred,prey=prey,predPrey=predPrey))
 }
 
-source('make_plots.R',local=TRUE)
-
-
-get_terminal_year<-function(OP){
-  return(OP@last.year)
+put_op_Fmodel<-function(a,OP.trigger) {
+  OP.trigger@HCR[1,] <- hcrval[a$HCR]
+  OP.trigger@Ftarget['init',]<-a$target.F
+  OP.trigger@trigger[1,]<-a$T1/plotUnits['SSB']
+  OP.trigger@trigger[2,]<-a$T2/plotUnits['SSB']
+  return(OP.trigger)
 }
 
-termYear<-get_terminal_year(OP)
-
-get_other_predators<-function(){
-  First.year<-rep(1.0,length(other.spNames)) ;names(First.year)<-other.spNames
-  Last.year<-Total.change<-First.year
-  
-  for (sp in other.spNames)  {
-    if (OP@other.predator['first',sp]== -1)   First.year[sp]<-stq_year+1 else First.year[sp] <- OP@other.predator['first',sp]
-    if (OP@other.predator['second',sp]== -1)  Last.year[sp]<-OP@other.predator['second',sp]<- termYear else  Last.year[sp] <- OP@other.predator['second',sp]
-    if ((OP@other.predator['first',sp]== -1) || (OP@other.predator['second',sp]== -1)) Total.change[sp]<- OP@other.predator['factor',sp]** (OP@other.predator['second',sp]-OP@other.predator['first',sp]+1) else Total.change[sp]<-1
-  }
-  
-  (data.frame(Predator=other.spNames,
-                    change=OP@other.predator['factor',], 
-                     First.year=as.integer(First.year), 
-                    Last.year=as.integer(Last.year),
-                    Total.change=Total.change , stringsAsFactors = FALSE))
-}
-other_predators<-get_other_predators()
 
 put_other_predators<-function(a,OP){
   OP@other.predator['factor',]<-a$change
@@ -401,81 +250,259 @@ put_other_predators<-function(a,OP){
   return(OP)
 }
 
-
-hcrlab = c("Fixed F", "F from SSB", "F from TSB")
-hcr <- data.frame(val = hcrlab)
-hcrval<-c(1,2,22);names(hcrval)<-hcrlab 
-
-get_op_Fmodel<-function(){
-  HCR<-OP.trigger@HCR
-  trigger<-OP.trigger@trigger*plotUnits['SSB']
-  Ftarget<-OP.trigger@Ftarget['init',]
-  return(data.frame(Species=VPA.spNames,target.F=Ftarget, HCR=names(hcrval[match(HCR[1,],hcrval)]),T1=trigger[1,],T2=trigger[2,],stringsAsFactors = FALSE))
-}
-Foption_tab<-get_op_Fmodel()
+update_environment<-function(area) {
+  if (area=='North Sea') {data_dir <<- "Data"; ars<<-'NS'}
+  if (area=='Baltic Sea'){data_dir<<- "Data_baltic"; ars<<-'BS' }
 
 
-# save settings
-#lastSet<-list(final_year=termYear,F_model=Foption_tab,Other_pred=other_predators,exploi_pat=annExplPat,    recruitment=recruitMode)
-#lapply(lastSet,print)
+  # reset option files to default values
+  file.copy(file.path(data_dir,'op_config_master.dat'),file.path(data_dir,'op_config.dat'),overwrite = TRUE)
+  file.copy(file.path(data_dir,'op_exploitation_master.in'),file.path(data_dir,'op_exploitation.in'),overwrite = TRUE)
+  
+  
+  # control objects for predictions
+  data.path<<-data_dir # used by the control objects
+  
+  SMS<-read.FLSMS.control(file='sms.dat',dir=data_dir)
+  #get information from SMS run
+  n.species.tot <<- SMS@no.species  # number of species including "other predators"
+  n.pred.other<<-sum(SMS@species.info[,'predator']==2) #number of "other predators"
+  n.VPA<<-n.species.tot-n.pred.other #number of species with analytical assessment
+  n.pred<<-n.pred.other+sum(SMS@species.info[,'predator']==1) # number of predators
+  n.fleet <<- n.VPA   # in this case it is just the number of species, one "fleet" per species
+  stq_year<<-SMS@last.year.model
+  fy_year_hist<<-SMS@first.year.model
+  n.seasons<<-SMS@last.season
+  first.age<<-SMS@first.age
+  spNames<<-SMS@species.names
+  firstVPA<<-n.species.tot-n.VPA+1   #first species with analytical assessment
+  VPA.spNames<<-spNames[firstVPA:n.species.tot]
+  last.age<<-SMS@species.info[VPA.spNames,'last-age']
+  max.age<<-SMS@max.age.all
+  n.age<<-max.age-first.age+1
+  Fages<<-SMS@avg.F.ages
+ 
+  spOtherNames<<-c('Other.food',spNames)
+  other.spNames<<-spNames[1:n.pred.other]
+   
+ 
+  # group predator names for eaten biomass
+  pred_format<<-read.csv(file.path(data_dir,'pred_format.csv'),header=TRUE, stringsAsFactors = FALSE)
+  #pp<-unique(subset(pred_format,new_no>=0,select=c(new,new_no,group,is.predator,is.prey)))
+  pp<<-unique(subset(pred_format,select=c(new,new_no,group)))
+  pp<<-pp[order(pp$new_no),]
+  predPreyFormat<<-pp$new
+  pp_short<<-filter(pp,new_no >=0) 
+  
+  recruitMode<<-c('Determenistic','Stochastic')[1]
 
-put_op_Fmodel<-function(a,OP.trigger) {
-  OP.trigger@HCR[1,] <- hcrval[a$HCR]
-  OP.trigger@Ftarget['init',]<-a$target.F
-  OP.trigger@trigger[1,]<-a$T1/plotUnits['SSB']
-  OP.trigger@trigger[2,]<-a$T2/plotUnits['SSB']
-  return(OP.trigger)
-}
-
-doRunModel<-TRUE  # flag for re-running the prediction model
-doWriteOptions<-TRUE  # flag for writing option files for the prediction model
-doWriteExplPattern<- FALSE # flag for writing exploitation pattern file (op_exploitation.in)
-
-# icons for HCR options
-hcr$img = c(
-  sprintf("<img src='fixed_F.png' width=100px><div class='jhr'>%s</div></img>", hcr$val[1]),
-  sprintf("<img src='AR_F_SSB.png' width=100px><div class='jhr'>%s</div></img>", hcr$val[2]),
-  sprintf("<img src='AR_F_TSB.png' width=100px><div class='jhr'>%s</div></img>", hcr$val[3])
-)
-oldFvals<-rep(1.0,n.fleet)
+  # options for predictions, reset from master version
+  OP<-read.FLOP.control(file="op_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other,n.pred=n.pred)
+  OP.trigger<-read.FLOPtrigger.control(file="op_trigger_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other)
 
 
-# Data for table with the most important data
-makeResTable<-function(x){
-  a<-data.frame(Species=VPA.spNames,
-                F_base=round(x$baseLine[,'Fbar'],3),
-                F_new=round(x$out$a[,'Fbar'],roundUnits['Fbar']),
-                F_change=(x$out$a[,'Fbar']-x$baseLine[,'Fbar'])/x$baseLine[,'Fbar'],
-                Yield_base=round(x$baseLine[,'Yield'],3),
-                Yield_new=round(x$out$a[,'Yield'],roundUnits['Yield']),
-                Y_change=(x$out$a[,'Yield']-x$baseLine[,'Yield'])/x$baseLine[,'Yield'],
-                SSB_base=round(x$baseLine[,'SSB'],roundUnits['SSB']),
-                SSB_new=round(x$out$a[,'SSB'],roundUnits['SSB']),
-                SSB_change=(x$out$a[,'SSB']-x$baseLine[,'SSB'])/x$baseLine[,'SSB'],
-                rec_base=round(x$baseLine[,'Recruits'],roundUnits['Recruits']),
-                rec_new=round(x$out$a[,'Recruits'],roundUnits['Recruits']))
+  # read units and label used for plots etc.
+  a<-read_csv(file=file.path(data_dir,'units.csv'),col_types = cols()) 
+  plotUnits<<-a$plotUnits; names(plotUnits)<<-a$type
+  plotLabels<<-a$plotLabels; names(plotLabels)<<-a$type
+  plotLabels[is.na(plotLabels)]<<-" "              
+  roundUnits<<-a$roundUnits; names(roundUnits)<<-a$type
+  
+  
+  # read status quo values (= values in the terminal hindcast SMS model year)  
+  status_quo<<-read_csv(file=file.path(data_dir,'status_quo.csv'),col_types = cols()) %>%
+    mutate(Rec=Rec*plotUnits['Recruits'],SSB=SSB*plotUnits['SSB'],TSB=TSB*plotUnits['TSB'],SOP=SOP*plotUnits['Yield'],
+           Yield=Yield*plotUnits['Yield'],mean.F=mean.F*plotUnits['Fbar'],Eaten=Eaten*plotUnits['DeadM'])
+  
+  # read hindcast SMS values  
+  histAnnoM<<-read_csv(file=file.path(data_dir,'hist_anno_M.csv'),col_types = cols()) %>%mutate(Species=spNames[Species.n])
+  
+  histCondensed<<-read_csv(file=file.path(data_dir,'hist_condensed.csv'),col_types = cols())%>%mutate(Species=spNames[Species.n]) %>%
+    mutate(Recruits=Recruits*plotUnits['Recruits'],SSB=SSB*plotUnits['SSB'],TSB=TSB*plotUnits['TSB'],
+           Yield=Yield*plotUnits['Yield'],yield.core=yield.core*plotUnits['Yield'],
+           Fbar=Fbar*plotUnits['Fbar'],
+           DeadM1=DeadM1*plotUnits['DeadM'],DeadM2=DeadM2*plotUnits['DeadM'],
+           DeadM1.core=DeadM1.core*plotUnits['DeadM'],DeadM2.core=DeadM2.core*plotUnits['DeadM'])
+  
+  histEaten <<- read_csv(file=file.path(data_dir,'who_eats_whom_historical.csv'),col_types = cols()) %>%
+                mutate(Predator=parse_factor(Predator,levels=predPreyFormat),Prey=parse_factor(Prey,levels=predPreyFormat),eatenW=eatenW*plotUnits['DeadM'])
+  
+  refPoints<<-matrix(scan(file.path(data_dir,"op_reference_points.in"),quiet = TRUE, comment.char = "#"),ncol=4,byrow=TRUE)
+  rownames(refPoints)<<-VPA.spNames
+  colnames(refPoints)<<-c('Flim','Fpa','Blim','Bpa')
+  refPoints[,3:4] <<- refPoints[,3:4]* plotUnits['SSB']
+  
+  explPat_in<-scan(file.path(data_dir,"op_exploitation.in"),quiet = TRUE, comment.char = "#")
+  explPat<<-array(explPat_in,dim=c(n.age,n.VPA,n.seasons),dimnames=list(paste('age',as.character(first.age:max.age)),VPA.spNames,paste0('Q_',1:n.seasons)))
+  annExplPat<<-apply(explPat,c(1,2),sum) # annual exploitation pattern
+  
+  # SMS output values in the last year
+  base_SSB<<-stqSSB<<-status_quo$SSB
+  base_F<<-stqF<<-status_quo$mean.F
+  #stqF<-status_quo$sum.q.F
+  base_Yield<<-stqYield<<-status_quo$Yield
+  base_Rec<<-stqRec<<-status_quo$Rec
+  
+  # write status quo F
+  #cat("1\n",base_F,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values
+  
+  # read various setting for options files
+  hcr_ini<<-read.csv(file.path(data_dir,'HCR_ini.csv'),header=TRUE,stringsAsFactors = FALSE)
+  
+  ### change option values (could have been done in the master files!)
+  OP@rec.noise['lower',]<-hcr_ini$noise.low
+  OP@rec.noise['upper',]<-hcr_ini$noise.high
+  OP@recruit.adjust.CV[1,]<-hcr_ini$rec.adjust.CV.single
+  OP@recruit.adjust[1,]<-hcr_ini$rec.adjust.single
+  #
+  OP.trigger@Ftarget['init',]<-base_F
+  OP.trigger@trigger['T1',]<-hcr_ini$T1
+  OP.trigger@trigger['T2',]<-hcr_ini$T2
+  OP.trigger@HCR[1,]<-1
+  
+  # write option files to be used
+  write.FLOP.control(OP,file=file.path(data_dir,"op.dat"),nice=TRUE)
+  write.FLOPtrigger.control(OP.trigger,file="op_trigger.dat",path=data_dir, nice=TRUE)
+  
+  
+  fleetNames<<-paste0('fl_',VPA.spNames) # just this special case where we have no fleets
+  
+  #recruitment parameters from op_config.dat
+  rec<-readLines(file.path(data_dir,"op_config.dat"))
+  found<-grep("#model alfa  beta std info1 info2",rec)
+  rec<-scan(file.path(data_dir,"op_config.dat"),skip=found,comment.char = "#",nlines=n.VPA,quiet = TRUE)
+  rec<-matrix(rec,nrow=n.VPA,byrow=TRUE)
+  colnames(rec)<-c('model','a','b','s','o1','o2')
+  rownames(rec)<-VPA.spNames
+  rec<<-rec
+  
+  # maximum recruits
+  max_rec<-rep(0,n.VPA);names(max_rec)<-VPA.spNames
+  i<-rec[,'model']==100;max_rec[i]<-exp(rec[i,'a'])*rec[i,'b']  # Hockey stick
+  i<-rec[,'model']==1;  max_rec[i]<-rec[i,'a']/(rec[i,'b']*exp(1))  # Ricker
+  i<-rec[,'model']==2;  max_rec[i]<-rec[i,'a']/rec[i,'b']  # B & H
+  i<-rec[,'model']==3;  max_rec[i]<-exp(rec[i,'a'])  # GM
+  i<-OP@recruit.adjust.CV==2; max_rec[i]<-max_rec[i]*exp((rec[i,'s']^2)/2)
+  max_rec<<-max_rec*plotUnits['Recruits']
+  
+  # values for baselines option lists
+  bsF<<-list(Names=list('No change',paste0('F(',stq_year,')'),'Most recent results'),Values=list(0,1,2))
+  bsSSB<<-list(Names=list('No change',paste0('SSB(',stq_year,')'),'Most recent results'),Values=list(0,1,2))
+  bsYield<<-list(Names=list('No change',paste0('Yield(',stq_year,')'),'Most recent results'),Values=list(0,1,2))
+  bsRec<<-list(Names=list('No change',paste0('Recruitment(',stq_year,')'),'Most recent results','Maximum recrutiment'),Values=list(0,1,2,3))
+  
+  
+  F_mult<<-1.0  
+  
+  Fvalues<<-stqF*F_mult
+  
+  oldwd<<-getwd()
+  
+  # command file for executing the OP program to make a prediction
+  cmd <<- paste0('cd "', file.path(oldwd,data_dir), '" &&  "./op" -maxfn 0 -nohess > ud.dat')
 
-  colnames(a)<-c("Species",'F base',                                  paste0('F(',termYear,')'),                         'F change',
-                           paste0('Yield base',plotLabels['Yield']),  paste0('Yield(',termYear,')', plotLabels['Yield']),'Yield change',
-                           paste0('SSB base', plotLabels['SSB']),     paste0('SSB(',termYear,') ',  plotLabels['SSB']),  'SSB change',
-                           paste0('Rec. base',plotLabels['Recruits']),paste0('Rec(',termYear,') ',  plotLabels['Recruits']))
-  return(a)
-}
+  get_terminal_year<-function(OP){
+    return(OP@last.year)
+  }
+  
+  termYear<<-get_terminal_year(OP)
+  
+  get_other_predators<-function(){
+    First.year<-rep(1.0,length(other.spNames)) ;names(First.year)<-other.spNames
+    Last.year<-Total.change<-First.year
+    
+    for (sp in other.spNames)  {
+      if (OP@other.predator['first',sp]== -1)   First.year[sp]<-stq_year+1 else First.year[sp] <- OP@other.predator['first',sp]
+      if (OP@other.predator['second',sp]== -1)  Last.year[sp]<-OP@other.predator['second',sp]<- termYear else  Last.year[sp] <- OP@other.predator['second',sp]
+      if ((OP@other.predator['first',sp]== -1) || (OP@other.predator['second',sp]== -1)) Total.change[sp]<- OP@other.predator['factor',sp]** (OP@other.predator['second',sp]-OP@other.predator['first',sp]+1) else Total.change[sp]<-1
+    }
+    
+    (data.frame(Predator=other.spNames,
+                      change=OP@other.predator['factor',], 
+                       First.year=as.integer(First.year), 
+                      Last.year=as.integer(Last.year),
+                      Total.change=Total.change , stringsAsFactors = FALSE))
+  }
+  other_predators<<-get_other_predators()
+  
+  
+  
+  hcrlab <<- c("Fixed F", "F from SSB", "F from TSB")
+  hcr <<- data.frame(val = hcrlab)
+  hcrval<<-c(1,2,22);names(hcrval)<<-hcrlab 
+  
+  get_op_Fmodel<-function(){
+    HCR<-OP.trigger@HCR
+    trigger<-OP.trigger@trigger*plotUnits['SSB']
+    Ftarget<-OP.trigger@Ftarget['init',]
+    return(data.frame(Species=VPA.spNames,target.F=Ftarget, HCR=names(hcrval[match(HCR[1,],hcrval)]),T1=trigger[1,],T2=trigger[2,],stringsAsFactors = FALSE))
+  }
+  Foption_tab<<-get_op_Fmodel()
 
-sliders <- div()
-for (i in (1:n.fleet)) {
-  sliders <- tagAppendChild(sliders, sliderInput(inputId = paste0("F.",fleetNames[i]),
-                                                 label = paste(fleetNames[i]),
+  
+  doRunModel<<-TRUE  # flag for re-running the prediction model
+  doWriteOptions<<-TRUE  # flag for writing option files for the prediction model
+  doWriteExplPattern<<- FALSE # flag for writing exploitation pattern file (op_exploitation.in)
+  
+  # icons for HCR options
+  hcr$img <<-c(
+    sprintf("<img src='fixed_F.png' width=100px><div class='jhr'>%s</div></img>", hcr$val[1]),
+    sprintf("<img src='AR_F_SSB.png' width=100px><div class='jhr'>%s</div></img>", hcr$val[2]),
+    sprintf("<img src='AR_F_TSB.png' width=100px><div class='jhr'>%s</div></img>", hcr$val[3])
+  )
+  oldFvals<<-rep(1.0,n.fleet)
+
+ 
+  OP.trigger<<-OP.trigger
+  OP<<-OP
+    
+  return()
+}  #end update_environment
+
+
+doSlider<-function(area){
+  if (area==selectedAreas[1]) sl_dir<-'Data' else sl_dir<-'Data_baltic'
+  if (area==selectedAreas[1]) ars<-'NS' else ars<-'BS'
+  
+  SMS<-read.FLSMS.control(file='sms.dat',dir=sl_dir)
+  #get information from SMS run
+  n.species.tot <- SMS@no.species  # number of species including "other predators"
+  n.pred.other<-sum(SMS@species.info[,'predator']==2) #number of "other predators"
+  n.fleet<-n.species.tot-n.pred.other #number of species with analytical assessment
+  firstVPA<-n.species.tot-n.fleet+1   #first species with analytical assessment
+  fleetNames<-SMS@species.names[firstVPA:n.species.tot]
+  
+  slider <- div()
+  for (i in (1:n.fleet)) {
+    slider <- tagAppendChild(slider, sliderInput(inputId = paste0("F.",ars,'fl_',fleetNames[i]),
+                                                 label = paste0('fl_',fleetNames[i]),
                                                  min = 0.25, max = 4.0, value = 1.0, step = 0.05))
+  }
+  return(slider)
 }
 
+####  end functions #####
+
+selectedAreas<-c('North Sea','Baltic Sea')
+selectedArea<-selectedAreas[1]
+
+slidersNS<-doSlider(selectedAreas[1])
+slidersBS<-doSlider(selectedAreas[2])
+
+update_environment(selectedAreas[1])
+
+########################################
 
 ui <- navbarPage(title = "SMS",
         tabPanel(title='ReadMe',
+                 column(2,
                  radioButtons(inputId = 'language',label='Select language',choices=c('Danish','English')),
-                 conditionalPanel("input.language=='English'",includeMarkdown(file.path(help_dir, "SMS-intro.md"))),
-                 conditionalPanel("input.language=='Danish'",includeMarkdown(file.path(help_dir, "SMS-intro_DK.md")))
-                 
+                 radioButtons(inputId = 'SMSarea',label='Select area',choices=selectedAreas)
+                 ),
+                 conditionalPanel("input.language=='English' & input.SMSarea=='North Sea'",includeMarkdown(file.path(help_dir, "SMS-intro.md"))),
+                 conditionalPanel("input.language=='English' & input.SMSarea=='Baltic Sea'",includeMarkdown(file.path(help_dir, "SMS-intro-baltic.md"))),
+                 conditionalPanel("input.language=='Danish'  & input.SMSarea=='North Sea'",includeMarkdown(file.path(help_dir, "SMS-intro_DK.md"))),
+                 conditionalPanel("input.language=='Danish'  & input.SMSarea=='Baltic Sea'",includeMarkdown(file.path(help_dir, "SMS-intro-baltic_DK.md")))
         ),
         tabPanel(title='Simple predictions',
                tabsetPanel(id='simple_predict',        
@@ -485,8 +512,8 @@ ui <- navbarPage(title = "SMS",
                             helper(colour = "green", type = "markdown",content = "SameFactor"),
                           conditionalPanel("input.effcontrolAll==1", sliderInput("F.all", "F factor",
                                                        min = 0.5, max = 2.0, value = 1, step = 0.05)),
-                          conditionalPanel("input.effcontrolAll==0",sliders),
-                        
+                          conditionalPanel("input.effcontrolAll==0 & input.SMSarea=='North Sea'",slidersNS),
+                          conditionalPanel("input.effcontrolAll==0 & input.SMSarea=='Baltic Sea'",slidersBS),
                           br(),
                           downloadButton(outputId = "radarPlots1", label = "Download the plot")
                     ),     
@@ -544,14 +571,6 @@ ui <- navbarPage(title = "SMS",
                              conditionalPanel("input.recDetSto=='Stochastic'",textOutput("stoch_explain"))
                         ),
                         
-                      # conditionalPanel("input.Option=='Set/Reset options'",
-                      #                   wellPanel(
-                      #                     radioButtons(inputId = 'setReset',label='Set/Reset option ',choices=list('Set','Reset')),
-                      #                     actionButton(inputId="updateSetReset", "Confirm Set/Reset choice")
-                      #                   )  %>% helper(colour = "green", type = "markdown",content = "SetReset")
-                      #  ),
-                        
-                        
                         conditionalPanel("input.Option=='F model'",
                           wellPanel(
                            selectInput(inputId="HCR.sp", label="Species",choices=VPA.spNames),
@@ -567,7 +586,7 @@ ui <- navbarPage(title = "SMS",
                                           selectInput(inputId="OtherSp", label="Other predator",choices=other.spNames),
                                           sliderInput(inputId="OtherFirst",label="First year for change",min = stq_year+1, max = termYear, value = stq_year+1, step =1,sep=''),
                                           sliderInput(inputId="OtherSecond",label="last year for change",min = stq_year+1, max = termYear, value = termYear, step =1,sep=''),
-                                          numericInput(inputId="OtherFactor",label="Change factor per year, (e.g. 1.1 means a 10 % increase per year)",value=1 ,min=-2,step=0,1)
+                                          numericInput(inputId="OtherFactor",label="Change factor per year, (e.g. 1.1 means a 10 % increase per year)",value=1 ,min=-2,step=0.01)
                          ),
                                           
                         conditionalPanel("input.Option=='Exploitation pattern'",
@@ -578,15 +597,15 @@ ui <- navbarPage(title = "SMS",
                                                                        helper(colour = "green", type = "markdown",content = "finalYear")),
                          conditionalPanel("input.Option=='F model'",actionButton(inputId="updateOptionTable", "Update option table")),
                          conditionalPanel("input.Option=='Other predators'",actionButton(inputId="updateOptionTableOther", "Update option table"))
-                           ),
+                         ),
                     conditionalPanel("input.Option=='F model'",column(7,br(),tableOutput(outputId="HCRtable1"))),
                     conditionalPanel("input.Option=='Other predators'",column(7,br(),tableOutput(outputId="Othertable"))),
+                    conditionalPanel("input.Option=='Other predators'",column(7,plotOutput(outputId = "other_plot"))),
                     conditionalPanel("input.Option=='Exploitation pattern'",column(7,
                                        br(),h3('Drag  the individual bar to change relativ F at age'),br(),DragableChartOutput("testdrag", width = "440px")))
                     
                   ) ,
                   tabPanel(title='Results',
-                           
                            column(4,   
                              br(),br(),
  
@@ -680,13 +699,15 @@ ui <- navbarPage(title = "SMS",
                 )
             )),
         tabPanel(title='About',includeMarkdown(file.path(help_dir, "about.md")))
-        ,useShinyjs()
 )
 
  server <- function(input, output, session) {
  
    res <- reactiveValues(rv = list(out=do_OP(readResSimple=TRUE,writeOption=doWriteOptions,source='init'),Fmulti=rep(F_mult,n.fleet),baseLine=do_baseLine()))   
 
+   print(reactiveValues())
+   
+   
    # uses 'helpfiles' directory by default
    # in this example, we do not use the withMathJax parameter to render formulae
    observe_helpers(withMathJax = FALSE)
@@ -712,6 +733,9 @@ ui <- navbarPage(title = "SMS",
    output$SSB_plot4   <- renderPlot({ plot_one(res$rv,type='SSB')      })
    output$rec_plot4   <- renderPlot({ plot_one(res$rv,type='Recruits') })
    
+   output$other_plot   <- renderPlot({plot_other(sp=input$"OtherSp",firsty=input$"OtherFirst",lasty=input$"OtherSecond",chOther=input$"OtherFactor",firstYear=stq_year+1, finalYear=input$finalYear) })
+
+
    output$stoch_explain <- renderText({paste('Constant Fishing mortalities will not work for stochastic recruitment. You have to defined Harvest Control Rules in the "F-model" option above,',
                                              'starting with the default values')})
    output$summary_plot <-renderPlot({   if (res$rv$out$options$readResDetails) {sumPlot<<- plot_summary_new(res=res$rv,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),
@@ -847,36 +871,6 @@ ui <- navbarPage(title = "SMS",
    }
   })
  
-  # set - reset options NOT USED
-   dummy_lastSet <- observeEvent(input$updateSetReset ,{
-     #cat(input$updateSetReset,input$setReset,'\n')
-     if (input$setReset=='Set') {
-       #cat("\nCommand Set\n")
-       lastSet<<-list(final_year=termYear,F_model=Foption_tab,Other_pred=other_predators,exploi_pat=annExplPat,    recruitment=recruitMode)
-       #lapply(lastSet,print)
-     }
-     if (input$setReset=='Reset') {
-       #cat("\nCommand ReSet\n")
-
-       termYear<<-lastSet$final_year
-       updateSliderInput(session,inputId="finalYear", value = termYear)
-       updateSliderInput(session,inputId="lastY",max=termYear)
-       updateSliderInput(session,inputId="lastYwho",max=termYear)
-       
-       
-       Foption_tab<<-lastSet$F_model
- 
-       other_predators<<-lastSet$Other_pred
-       annExplPat<<-lastSet$exploi_pat
-       recruitMode<<- lastSet$recruitment
-
-       
-      # reset("finalYear")  #shinyjs
-     }
-   })
-   
-   
-
   otherDf <- eventReactive(input$updateOptionTableOther || input$Option=='Other predators',{
    #cat(input$updateOptionTableOther,input$Option,input$OtherFactor,input$OtherFirst,input$OtherSecond,'\n')
      if (input$Option=='Other predators') {
@@ -947,7 +941,7 @@ ui <- navbarPage(title = "SMS",
   observeEvent(input$F.all, {
      val <- input$F.all
      vals<-sapply(paste0("F.", fleetNames), function(item) input[[item]]) 
-     if (input$effcontrolAll) purrr::walk(paste0("F.", fleetNames), function(id) updateSliderInput(session, id, value = val))
+     if (input$effcontrolAll) purrr::walk(paste0("F.",ars, fleetNames), function(id) updateSliderInput(session, id, value = val))
    },ignoreInit = TRUE)
 
  
@@ -969,15 +963,54 @@ ui <- navbarPage(title = "SMS",
   })
   
 
+
+  observeEvent(input$SMSarea,{
+    if (area.change.no>0) { # do not run it in the
+      update_environment(area=input$SMSarea)
+      selectedArea<<-input$SMSarea
+      res$rv$out <- do_OP(readResSimple=TRUE,writeOption=doWriteOptions,source='SMS area change') 
+      res$rv$Fmulti<-rep(F_mult,n.fleet)
+      res$rv$baseLine <-do_baseLine()
+
+      # update simple prediction
+      updateRadioButtons(inputId = 'bas_F_s',    choiceNames=bsF$Names,choiceValues = bsF$Values) 
+      updateRadioButtons(inputId = 'bas_Rec_s',  choiceNames=bsRec$Names,choiceValues = bsRec$Values)
+      updateRadioButtons(inputId = 'bas_Yield_s',choiceNames=bsYield$Names,choiceValues = bsYield$Values)
+      updateRadioButtons(inputId = 'bas_SSB_s',  choiceNames=bsSSB$Names,choiceValues = bsSSB$Values)
+      
+      
+      # update detailed prediction
+      updateSelectInput(inputId="sumSpecies",choices=VPA.spNames)
+      updateSelectInput(inputId="exSpecies", choices=VPA.spNames)
+      updateSelectInput(inputId="HCR.sp",choices=VPA.spNames)
+      updateSelectInput(inputId="OtherSp",choices=other.spNames)
+      
+      updateSliderInput(inputId="yearFoodWeb",value=stq_year+1,min=fy_year_hist,max=termYear,step=1)
+      updateSliderInput(inputId="OtherFirst", min = stq_year+1, max = termYear, value = stq_year+1, step=1)
+      updateSliderInput(inputId="OtherSecond",min = stq_year+1, max = termYear, value = termYear, step=1)
+      updateSliderInput(inputId="finalYear",  min = stq_year+1, max = stq_year+100, value = termYear, step=1)
+      updateSliderInput(inputId="firstYwho",value=stq_year+1,min=fy_year_hist,max=termYear,step=1)
+      updateSliderInput(inputId="lastYwho", value=termYear,min=fy_year_hist+5,max=termYear,step=1)
+      updateSliderInput(inputId="firstY",value=stq_year+1,min=fy_year_hist,max=termYear,step=1)
+      updateSliderInput(inputId="lastY",value=termYear,min=fy_year_hist+5,max=termYear,step=1)
+     
+      updateCheckboxGroupInput(inputId="foodWebSp",choices = pp_short$new,
+                         selected = filter(pp_short, group %in% c("Other predators","VPA.pred","VPA.prey"))$new)
+    
+      } else area.change.no<<-area.change.no+1
+  })
+  
   
   observe({
     # simple predictions  
-   vals<-sapply(paste0("F.", fleetNames), function(item) input[[item]])
+   vals<-sapply(paste0("F.",ars, fleetNames), function(item) input[[item]])
+ # print(input)
+    print(vals)
    if (any(vals!=oldFvals)) {
       res$rv$Fmulti<-vals
       OP@output<<-20  # condensed output
       OP.trigger@Ftarget['init',]<<-vals*stqF
-     res$rv$out<-do_OP(readResSimple=TRUE,writeOption=doWriteOptions,source='simple prediction')
+      res$rv$out<-do_OP(readResSimple=TRUE,writeOption=doWriteOptions,source='simple prediction')
      oldFvals<<-vals
    }
 
@@ -991,6 +1024,9 @@ ui <- navbarPage(title = "SMS",
        OP.trigger@last.year<<-termYear
        updateSliderInput(session,inputId="lastY",max=input$finalYear)
        updateSliderInput(session,inputId="lastYwho",max=input$finalYear)
+       updateSliderInput(inputId="OtherFirst",max=input$finalYear)
+       updateSliderInput(inputId="OtherSecond",max=input$finalYear)
+       
     }
 
    if (input$recDetSto != recruitMode) {
@@ -1016,7 +1052,7 @@ ui <- navbarPage(title = "SMS",
        updateFoption_single(input$HCR.sp)
      }
      recruitMode<<-input$recDetSto 
-    
+
    } #end observe
   
  

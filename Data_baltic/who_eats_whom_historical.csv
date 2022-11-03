@@ -1,0 +1,337 @@
+"Predator","Year","Predator.no","Prey","Prey.no","eatenW"
+"Cod",1974,1,"Herring",2,416550.446457644
+"Cod",1975,1,"Herring",2,426042.540219043
+"Cod",1976,1,"Herring",2,373996.846832494
+"Cod",1977,1,"Herring",2,447805.764202589
+"Cod",1978,1,"Herring",2,657494.160684159
+"Cod",1979,1,"Herring",2,831551.705042574
+"Cod",1980,1,"Herring",2,870233.640660432
+"Cod",1981,1,"Herring",2,885196.640713912
+"Cod",1982,1,"Herring",2,821517.983266871
+"Cod",1983,1,"Herring",2,698029.239216572
+"Cod",1984,1,"Herring",2,544652.318925064
+"Cod",1985,1,"Herring",2,388849.436109026
+"Cod",1986,1,"Herring",2,315588.11358929
+"Cod",1987,1,"Herring",2,293387.15339149
+"Cod",1988,1,"Herring",2,246788.399780186
+"Cod",1989,1,"Herring",2,188890.356701435
+"Cod",1990,1,"Herring",2,115084.621744511
+"Cod",1991,1,"Herring",2,81356.9970056248
+"Cod",1992,1,"Herring",2,96620.4009420045
+"Cod",1993,1,"Herring",2,140290.287085702
+"Cod",1994,1,"Herring",2,138338.101964772
+"Cod",1995,1,"Herring",2,115482.208149734
+"Cod",1996,1,"Herring",2,81814.1556404778
+"Cod",1997,1,"Herring",2,55994.0104063606
+"Cod",1998,1,"Herring",2,51509.0097620389
+"Cod",1999,1,"Herring",2,57745.9006564479
+"Cod",2000,1,"Herring",2,80460.0285490862
+"Cod",2001,1,"Herring",2,77684.5252846824
+"Cod",2002,1,"Herring",2,84626.2398494211
+"Cod",2003,1,"Herring",2,84901.1631402264
+"Cod",2004,1,"Herring",2,73610.571805331
+"Cod",2005,1,"Herring",2,93764.1954094302
+"Cod",2006,1,"Herring",2,107976.122019817
+"Cod",2007,1,"Herring",2,121261.243187305
+"Cod",2008,1,"Herring",2,144297.8473984
+"Cod",2009,1,"Herring",2,148106.320234315
+"Cod",2010,1,"Herring",2,142754.028569815
+"Cod",2011,1,"Herring",2,128593.796948875
+"Cod",2012,1,"Herring",2,116596.623462225
+"Cod",2013,1,"Herring",2,115316.599942216
+"Cod",2014,1,"Herring",2,126971.255820398
+"Cod",2015,1,"Herring",2,121115.752424497
+"Cod",2016,1,"Herring",2,93910.9272979098
+"Cod",2017,1,"Herring",2,69578.8237157803
+"Cod",2018,1,"Herring",2,54479.6747675338
+"Cod",2019,1,"Herring",2,50419.9352067672
+"Cod",2020,1,"Herring",2,51313.3272900414
+"Cod",2021,1,"Herring",2,51481.111705296
+"Cod",1974,1,"Sprat",3,559281.114130235
+"Cod",1975,1,"Sprat",3,553048.525431087
+"Cod",1976,1,"Sprat",3,621037.52306052
+"Cod",1977,1,"Sprat",3,652211.780098693
+"Cod",1978,1,"Sprat",3,711205.884458737
+"Cod",1979,1,"Sprat",3,618647.337202827
+"Cod",1980,1,"Sprat",3,595084.459416255
+"Cod",1981,1,"Sprat",3,674062.784854477
+"Cod",1982,1,"Sprat",3,803147.209348519
+"Cod",1983,1,"Sprat",3,835851.443253129
+"Cod",1984,1,"Sprat",3,625355.108216797
+"Cod",1985,1,"Sprat",3,462586.693532443
+"Cod",1986,1,"Sprat",3,366966.112517419
+"Cod",1987,1,"Sprat",3,329268.149001816
+"Cod",1988,1,"Sprat",3,274102.908781761
+"Cod",1989,1,"Sprat",3,240295.176300929
+"Cod",1990,1,"Sprat",3,165797.869495735
+"Cod",1991,1,"Sprat",3,151444.892117869
+"Cod",1992,1,"Sprat",3,213538.661642356
+"Cod",1993,1,"Sprat",3,287715.798344846
+"Cod",1994,1,"Sprat",3,326396.362025651
+"Cod",1995,1,"Sprat",3,344842.414028873
+"Cod",1996,1,"Sprat",3,263901.520607032
+"Cod",1997,1,"Sprat",3,211600.57718735
+"Cod",1998,1,"Sprat",3,222247.507237747
+"Cod",1999,1,"Sprat",3,234439.601773727
+"Cod",2000,1,"Sprat",3,273954.238194631
+"Cod",2001,1,"Sprat",3,249925.957480217
+"Cod",2002,1,"Sprat",3,246153.160746041
+"Cod",2003,1,"Sprat",3,267605.580573413
+"Cod",2004,1,"Sprat",3,298069.717564098
+"Cod",2005,1,"Sprat",3,311593.116859129
+"Cod",2006,1,"Sprat",3,309929.214733496
+"Cod",2007,1,"Sprat",3,300612.508706858
+"Cod",2008,1,"Sprat",3,338522.107452582
+"Cod",2009,1,"Sprat",3,378253.661767935
+"Cod",2010,1,"Sprat",3,336747.411252357
+"Cod",2011,1,"Sprat",3,281231.343865705
+"Cod",2012,1,"Sprat",3,236026.020662015
+"Cod",2013,1,"Sprat",3,223321.741487523
+"Cod",2014,1,"Sprat",3,267211.802452428
+"Cod",2015,1,"Sprat",3,299605.086493524
+"Cod",2016,1,"Sprat",3,242752.392844957
+"Cod",2017,1,"Sprat",3,187553.241694224
+"Cod",2018,1,"Sprat",3,158263.994629807
+"Cod",2019,1,"Sprat",3,138925.829803333
+"Cod",2020,1,"Sprat",3,136797.46229908
+"Cod",2021,1,"Sprat",3,132317.875169832
+"Humans",1974,0,"Herring",2,377003
+"Humans",1975,0,"Herring",2,349685
+"Humans",1976,0,"Herring",2,394769
+"Humans",1977,0,"Herring",2,270121
+"Humans",1978,0,"Herring",2,209750
+"Humans",1979,0,"Herring",2,225917
+"Humans",1980,0,"Herring",2,267906
+"Humans",1981,0,"Herring",2,281710
+"Humans",1982,0,"Herring",2,286530
+"Humans",1983,0,"Herring",2,323691
+"Humans",1984,0,"Herring",2,279565
+"Humans",1985,0,"Herring",2,316330
+"Humans",1986,0,"Herring",2,256813
+"Humans",1987,0,"Herring",2,222608
+"Humans",1988,0,"Herring",2,252127
+"Humans",1989,0,"Herring",2,261876
+"Humans",1990,0,"Herring",2,279259
+"Humans",1991,0,"Herring",2,196685
+"Humans",1992,0,"Herring",2,187841
+"Humans",1993,0,"Herring",2,230306
+"Humans",1994,0,"Herring",2,241656
+"Humans",1995,0,"Herring",2,221653
+"Humans",1996,0,"Herring",2,195666
+"Humans",1997,0,"Herring",2,197331
+"Humans",1998,0,"Herring",2,221690
+"Humans",1999,0,"Herring",2,174096
+"Humans",2000,0,"Herring",2,208546
+"Humans",2001,0,"Herring",2,202481
+"Humans",2002,0,"Herring",2,131045
+"Humans",2003,0,"Herring",2,112255
+"Humans",2004,0,"Herring",2,93370
+"Humans",2005,0,"Herring",2,90586
+"Humans",2006,0,"Herring",2,109545
+"Humans",2007,0,"Herring",2,114606
+"Humans",2008,0,"Herring",2,125342
+"Humans",2009,0,"Herring",2,131229
+"Humans",2010,0,"Herring",2,135658
+"Humans",2011,0,"Herring",2,115769
+"Humans",2012,0,"Herring",2,97498.6
+"Humans",2013,0,"Herring",2,100558
+"Humans",2014,0,"Herring",2,129420
+"Humans",2015,0,"Herring",2,174257
+"Humans",2016,0,"Herring",2,190496
+"Humans",2017,0,"Herring",2,200422
+"Humans",2018,0,"Herring",2,244048
+"Humans",2019,0,"Herring",2,202023
+"Humans",2020,0,"Herring",2,175532
+"Humans",2021,0,"Herring",2,128966
+"Humans",1974,0,"Sprat",3,262216
+"Humans",1975,0,"Sprat",3,212175
+"Humans",1976,0,"Sprat",3,142798
+"Humans",1977,0,"Sprat",3,166497
+"Humans",1978,0,"Sprat",3,111860
+"Humans",1979,0,"Sprat",3,66753.7
+"Humans",1980,0,"Sprat",3,48799.9
+"Humans",1981,0,"Sprat",3,42977.6
+"Humans",1982,0,"Sprat",3,42876.2
+"Humans",1983,0,"Sprat",3,26274.1
+"Humans",1984,0,"Sprat",3,42672.9
+"Humans",1985,0,"Sprat",3,58747.8
+"Humans",1986,0,"Sprat",3,66524
+"Humans",1987,0,"Sprat",3,87800.5
+"Humans",1988,0,"Sprat",3,76238.2
+"Humans",1989,0,"Sprat",3,45857.6
+"Humans",1990,0,"Sprat",3,53839.4
+"Humans",1991,0,"Sprat",3,86488.2
+"Humans",1992,0,"Sprat",3,208936
+"Humans",1993,0,"Sprat",3,131870
+"Humans",1994,0,"Sprat",3,264826
+"Humans",1995,0,"Sprat",3,278270
+"Humans",1996,0,"Sprat",3,418355
+"Humans",1997,0,"Sprat",3,511217
+"Humans",1998,0,"Sprat",3,469680
+"Humans",1999,0,"Sprat",3,415598
+"Humans",2000,0,"Sprat",3,388712
+"Humans",2001,0,"Sprat",3,339407
+"Humans",2002,0,"Sprat",3,331904
+"Humans",2003,0,"Sprat",3,296472
+"Humans",2004,0,"Sprat",3,373008
+"Humans",2005,0,"Sprat",3,397446
+"Humans",2006,0,"Sprat",3,344385
+"Humans",2007,0,"Sprat",3,383019
+"Humans",2008,0,"Sprat",3,371268
+"Humans",2009,0,"Sprat",3,401629
+"Humans",2010,0,"Sprat",3,334173
+"Humans",2011,0,"Sprat",3,256559
+"Humans",2012,0,"Sprat",3,226649
+"Humans",2013,0,"Sprat",3,271410
+"Humans",2014,0,"Sprat",3,238589
+"Humans",2015,0,"Sprat",3,245999
+"Humans",2016,0,"Sprat",3,243038
+"Humans",2017,0,"Sprat",3,282482
+"Humans",2018,0,"Sprat",3,302904
+"Humans",2019,0,"Sprat",3,311490
+"Humans",2020,0,"Sprat",3,268360
+"Humans",2021,0,"Sprat",3,284787
+"Residual mortality",1974,-1,"Cod",1,0
+"Residual mortality",2001,-1,"Cod",1,0
+"Residual mortality",1988,-1,"Cod",1,0
+"Residual mortality",1975,-1,"Cod",1,0
+"Residual mortality",2002,-1,"Cod",1,0
+"Residual mortality",1989,-1,"Cod",1,0
+"Residual mortality",1976,-1,"Cod",1,0
+"Residual mortality",2003,-1,"Cod",1,0
+"Residual mortality",1990,-1,"Cod",1,0
+"Residual mortality",1977,-1,"Cod",1,0
+"Residual mortality",2004,-1,"Cod",1,0
+"Residual mortality",1991,-1,"Cod",1,0
+"Residual mortality",1978,-1,"Cod",1,0
+"Residual mortality",2005,-1,"Cod",1,0
+"Residual mortality",1992,-1,"Cod",1,0
+"Residual mortality",1979,-1,"Cod",1,0
+"Residual mortality",2006,-1,"Cod",1,0
+"Residual mortality",1993,-1,"Cod",1,0
+"Residual mortality",1980,-1,"Cod",1,0
+"Residual mortality",2007,-1,"Cod",1,0
+"Residual mortality",1994,-1,"Cod",1,0
+"Residual mortality",1981,-1,"Cod",1,0
+"Residual mortality",2008,-1,"Cod",1,0
+"Residual mortality",1995,-1,"Cod",1,0
+"Residual mortality",1982,-1,"Cod",1,0
+"Residual mortality",2009,-1,"Cod",1,0
+"Residual mortality",1996,-1,"Cod",1,0
+"Residual mortality",1983,-1,"Cod",1,0
+"Residual mortality",2010,-1,"Cod",1,0
+"Residual mortality",1997,-1,"Cod",1,0
+"Residual mortality",1984,-1,"Cod",1,0
+"Residual mortality",2011,-1,"Cod",1,0
+"Residual mortality",1998,-1,"Cod",1,0
+"Residual mortality",1985,-1,"Cod",1,0
+"Residual mortality",2012,-1,"Cod",1,0
+"Residual mortality",1999,-1,"Cod",1,0
+"Residual mortality",1986,-1,"Cod",1,0
+"Residual mortality",2013,-1,"Cod",1,0
+"Residual mortality",2000,-1,"Cod",1,0
+"Residual mortality",1987,-1,"Cod",1,0
+"Residual mortality",2014,-1,"Cod",1,0
+"Residual mortality",2020,-1,"Cod",1,0
+"Residual mortality",2019,-1,"Cod",1,0
+"Residual mortality",2015,-1,"Cod",1,0
+"Residual mortality",2021,-1,"Cod",1,0
+"Residual mortality",2017,-1,"Cod",1,0
+"Residual mortality",2016,-1,"Cod",1,0
+"Residual mortality",2018,-1,"Cod",1,0
+"Residual mortality",1976,-1,"Herring",2,181122.3907025
+"Residual mortality",1974,-1,"Herring",2,217741.32362
+"Residual mortality",1977,-1,"Herring",2,174368.9578625
+"Residual mortality",2004,-1,"Herring",2,58617.947247825
+"Residual mortality",1975,-1,"Herring",2,193079.49266375
+"Residual mortality",1978,-1,"Herring",2,182663.235
+"Residual mortality",2005,-1,"Herring",2,59256.051524875
+"Residual mortality",2001,-1,"Herring",2,48887.428809575
+"Residual mortality",1979,-1,"Herring",2,199412.55283125
+"Residual mortality",2006,-1,"Herring",2,67572.49909575
+"Residual mortality",2002,-1,"Herring",2,50578.1455299
+"Residual mortality",1980,-1,"Herring",2,168232.1828
+"Residual mortality",2007,-1,"Herring",2,74530.31115595
+"Residual mortality",2003,-1,"Herring",2,64645.78104155
+"Residual mortality",1981,-1,"Herring",2,169303.819905
+"Residual mortality",2008,-1,"Herring",2,76546.5920547
+"Residual mortality",1995,-1,"Herring",2,88743.84812975
+"Residual mortality",1982,-1,"Herring",2,171435.4320525
+"Residual mortality",2009,-1,"Herring",2,76914.594032275
+"Residual mortality",1996,-1,"Herring",2,76691.32791825
+"Residual mortality",1983,-1,"Herring",2,151671.313525
+"Residual mortality",2010,-1,"Herring",2,70191.57536275
+"Residual mortality",1997,-1,"Herring",2,62356.345922
+"Residual mortality",1984,-1,"Herring",2,139685.34990625
+"Residual mortality",2011,-1,"Herring",2,66965.336024425
+"Residual mortality",1998,-1,"Herring",2,59988.59565025
+"Residual mortality",1985,-1,"Herring",2,129908.976067
+"Residual mortality",2012,-1,"Herring",2,78075.2622814
+"Residual mortality",1999,-1,"Herring",2,53846.51740025
+"Residual mortality",1986,-1,"Herring",2,107994.96411425
+"Residual mortality",2013,-1,"Herring",2,82618.11864385
+"Residual mortality",2000,-1,"Herring",2,54628.093968675
+"Residual mortality",1987,-1,"Herring",2,120576.82566
+"Residual mortality",2014,-1,"Herring",2,91022.23986475
+"Residual mortality",1992,-1,"Herring",2,101522.99504225
+"Residual mortality",1988,-1,"Herring",2,104483.59528725
+"Residual mortality",2015,-1,"Herring",2,98924.638431525
+"Residual mortality",1993,-1,"Herring",2,100061.32204
+"Residual mortality",1989,-1,"Herring",2,92045.57486925
+"Residual mortality",2016,-1,"Herring",2,80949.106249725
+"Residual mortality",1994,-1,"Herring",2,96916.445338
+"Residual mortality",1990,-1,"Herring",2,96201.51392375
+"Residual mortality",2017,-1,"Herring",2,75727.381376725
+"Residual mortality",2020,-1,"Herring",2,65859.4496539
+"Residual mortality",1991,-1,"Herring",2,88885.05463525
+"Residual mortality",2018,-1,"Herring",2,71378.101165375
+"Residual mortality",2021,-1,"Herring",2,68560.441179875
+"Residual mortality",2019,-1,"Herring",2,64015.799278275
+"Residual mortality",1977,-1,"Sprat",3,326282.433365
+"Residual mortality",1979,-1,"Sprat",3,164932.27598
+"Residual mortality",1978,-1,"Sprat",3,230649.636335
+"Residual mortality",1974,-1,"Sprat",3,302397.5057
+"Residual mortality",1980,-1,"Sprat",3,155461.350215
+"Residual mortality",1976,-1,"Sprat",3,357102.74517
+"Residual mortality",1975,-1,"Sprat",3,296319.67228
+"Residual mortality",1981,-1,"Sprat",3,178747.691965
+"Residual mortality",2008,-1,"Sprat",3,349213.141953
+"Residual mortality",1995,-1,"Sprat",3,608313.43325
+"Residual mortality",1982,-1,"Sprat",3,233082.34026
+"Residual mortality",2009,-1,"Sprat",3,364020.921109
+"Residual mortality",1996,-1,"Sprat",3,579523.52607
+"Residual mortality",1983,-1,"Sprat",3,293020.41475
+"Residual mortality",2010,-1,"Sprat",3,293501.885681
+"Residual mortality",1997,-1,"Sprat",3,529693.22597
+"Residual mortality",1984,-1,"Sprat",3,298224.556315
+"Residual mortality",2011,-1,"Sprat",3,246403.5044493
+"Residual mortality",1998,-1,"Sprat",3,498251.1258075
+"Residual mortality",1985,-1,"Sprat",3,283206.645515
+"Residual mortality",2012,-1,"Sprat",3,242341.5116295
+"Residual mortality",1999,-1,"Sprat",3,438626.1825935
+"Residual mortality",1986,-1,"Sprat",3,253333.292865
+"Residual mortality",2013,-1,"Sprat",3,235204.9727945
+"Residual mortality",2000,-1,"Sprat",3,424768.205135
+"Residual mortality",1987,-1,"Sprat",3,230693.034585
+"Residual mortality",2014,-1,"Sprat",3,290058.6393575
+"Residual mortality",2001,-1,"Sprat",3,367342.4541595
+"Residual mortality",1988,-1,"Sprat",3,199882.11176
+"Residual mortality",2015,-1,"Sprat",3,389803.013204
+"Residual mortality",2002,-1,"Sprat",3,332826.5698005
+"Residual mortality",1989,-1,"Sprat",3,222303.35443
+"Residual mortality",2016,-1,"Sprat",3,369460.9942043
+"Residual mortality",2003,-1,"Sprat",3,429652.8936825
+"Residual mortality",1990,-1,"Sprat",3,272012.787185
+"Residual mortality",2017,-1,"Sprat",3,344172.623404
+"Residual mortality",2004,-1,"Sprat",3,487522.9972245
+"Residual mortality",1991,-1,"Sprat",3,353619.76457
+"Residual mortality",2018,-1,"Sprat",3,317360.511061
+"Residual mortality",2005,-1,"Sprat",3,388839.0417315
+"Residual mortality",1992,-1,"Sprat",3,440634.350045
+"Residual mortality",2019,-1,"Sprat",3,296200.598493
+"Residual mortality",2006,-1,"Sprat",3,345071.247058
+"Residual mortality",1993,-1,"Sprat",3,405705.775645
+"Residual mortality",2020,-1,"Sprat",3,322173.393437
+"Residual mortality",2007,-1,"Sprat",3,324071.7536464
+"Residual mortality",1994,-1,"Sprat",3,484205.66323
+"Residual mortality",2021,-1,"Sprat",3,340072.5841065
