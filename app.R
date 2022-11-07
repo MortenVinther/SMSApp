@@ -1,7 +1,7 @@
 rm(list = ls())
 suppressPackageStartupMessages(library(shiny))
 library(shinyhelper)
-library(shinyjs)  
+#library(shinyjs)  
 suppressMessages(library(DT))
 library(readr)
 suppressMessages(library(dplyr))
@@ -95,7 +95,7 @@ updateExplPatttern<-function(explPat) {
 # call to the OP program
 do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeOption=FALSE,writeExplPat=FALSE,source='') {
   op.n<<-op.n+1
-  cat(op.n, "call source:", source, "  ,data_dir:",data_dir,"  ,readResSimple:",readResSimple," ,readResDetails:",readResDetails," ,readResStom:",readResStom," ,writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
+  #cat(op.n, "call source:", source, "  ,data_dir:",data_dir,"  ,readResSimple:",readResSimple," ,readResDetails:",readResDetails," ,readResStom:",readResStom," ,writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
   
   # write the F values
   Fvalues<-OP.trigger@Ftarget['init',]
@@ -250,6 +250,13 @@ put_other_predators<-function(a,OP){
   return(OP)
 }
 
+get_op_Fmodel<-function(){
+  HCR<-OP.trigger@HCR
+  trigger<-OP.trigger@trigger*plotUnits['SSB']
+  Ftarget<-OP.trigger@Ftarget['init',]
+  return(data.frame(Species=VPA.spNames,target.F=Ftarget, HCR=names(hcrval[match(HCR[1,],hcrval)]),T1=trigger[1,],T2=trigger[2,],stringsAsFactors = FALSE))
+}
+
 update_environment<-function(area) {
   if (area=='North Sea') {data_dir <<- "Data"; ars<<-'NS'}
   if (area=='Baltic Sea'){data_dir<<- "Data_baltic"; ars<<-'BS' }
@@ -298,7 +305,7 @@ update_environment<-function(area) {
 
   # options for predictions, reset from master version
   OP<-read.FLOP.control(file="op_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other,n.pred=n.pred)
-  OP.trigger<-read.FLOPtrigger.control(file="op_trigger_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other)
+  OP.trigger<<-read.FLOPtrigger.control(file="op_trigger_master.dat",path=data_dir,n.VPA=n.VPA,n.other.pred=n.pred.other)
 
 
   # read units and label used for plots etc.
@@ -431,12 +438,7 @@ update_environment<-function(area) {
   hcr <<- data.frame(val = hcrlab)
   hcrval<<-c(1,2,22);names(hcrval)<<-hcrlab 
   
-  get_op_Fmodel<-function(){
-    HCR<-OP.trigger@HCR
-    trigger<-OP.trigger@trigger*plotUnits['SSB']
-    Ftarget<-OP.trigger@Ftarget['init',]
-    return(data.frame(Species=VPA.spNames,target.F=Ftarget, HCR=names(hcrval[match(HCR[1,],hcrval)]),T1=trigger[1,],T2=trigger[2,],stringsAsFactors = FALSE))
-  }
+
   Foption_tab<<-get_op_Fmodel()
 
   
@@ -705,9 +707,6 @@ ui <- navbarPage(title = "SMS",
  
    res <- reactiveValues(rv = list(out=do_OP(readResSimple=TRUE,writeOption=doWriteOptions,source='init'),Fmulti=rep(F_mult,n.fleet),baseLine=do_baseLine()))   
 
-   print(reactiveValues())
-   
-   
    # uses 'helpfiles' directory by default
    # in this example, we do not use the withMathJax parameter to render formulae
    observe_helpers(withMathJax = FALSE)
@@ -736,7 +735,7 @@ ui <- navbarPage(title = "SMS",
    output$other_plot   <- renderPlot({plot_other(sp=input$"OtherSp",firsty=input$"OtherFirst",lasty=input$"OtherSecond",chOther=input$"OtherFactor",firstYear=stq_year+1, finalYear=input$finalYear) })
 
 
-   output$stoch_explain <- renderText({paste('Constant Fishing mortalities will not work for stochastic recruitment. You have to defined Harvest Control Rules in the "F-model" option above,',
+   output$stoch_explain <- renderText({paste('Constant Fishing mortalities will probably not work for stochastic recruitment. You probably have to defined Harvest Control Rules in the "F-model" option above,',
                                              'starting with the default values')})
    output$summary_plot <-renderPlot({   if (res$rv$out$options$readResDetails) {sumPlot<<- plot_summary_new(res=res$rv,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),
                                                                                             years=c(input$firstY,input$lastY),species=input$sumSpecies,splitLine=FALSE,
@@ -1004,8 +1003,6 @@ ui <- navbarPage(title = "SMS",
   observe({
     # simple predictions  
    vals<-sapply(paste0("F.",ars, fleetNames), function(item) input[[item]])
- # print(input)
-    print(vals)
    if (any(vals!=oldFvals)) {
       res$rv$Fmulti<-vals
       OP@output<<-20  # condensed output
