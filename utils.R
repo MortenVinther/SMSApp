@@ -6,7 +6,7 @@ load_ecoRegion<-function(ar){
   load(file=file.path(ard,"environment.Rdata"),verbose=FALSE,envir=my.environment)
   
   # command file for executing the OP program to make a prediction
-  cmd <<- paste0('cd "', file.path(getwd(),data_dir), '" &&  "./op" -maxfn 0 -nohess > ud.dat')
+  cmd <<- paste0('cd "', file.path(my.app.dir,data_dir), '" &&  "./op" -maxfn 0 -nohess > ud.dat')
   
   file.copy(file.path(data_dir,'op_config_master.dat'),file.path(data_dir,'op_config.dat'),overwrite = TRUE)
   file.copy(file.path(data_dir,'op_exploitation_master.in'),file.path(data_dir,'op_exploitation.in'),overwrite = TRUE)

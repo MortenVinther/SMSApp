@@ -57,8 +57,9 @@ source('utils.R',local=TRUE)
 #######################################
 #####  update_environment
 
-#source('load_ecoRegion.R',local=TRUE)
 my.environment<-environment()
+my.app.dir<-getwd()
+
 
 load_ecoRegion('North Sea')
 
@@ -523,7 +524,6 @@ ui <- navbarPage(title = "SMS",
   observeEvent(input$F.all, {
      val <- input$F.all
      vals<-sapply(paste(ars, fleetNames,sep='_'), function(item) input[[item]]) 
-     print(vals)
       if (input$effcontrolAll) purrr::walk(paste(ars,fleetNames,sep='_'), function(id) updateSliderInput(session, id, value = val))
    },ignoreInit = TRUE)
 
@@ -536,7 +536,6 @@ ui <- navbarPage(title = "SMS",
     updateSliderInput(session,inputId="lastYwho",min=input$firstYwho+5)
   })
   
-
   observeEvent(input$updateOptionTableOther,{
     updateActionButton(session, inputId="doRunDetailed", label = 'Push to update prediction',icon = icon("sync"))
   })
