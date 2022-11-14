@@ -112,9 +112,7 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
   return(out)
 }
 
- #plot_summary_new(res=res$rv,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),years=c(0,5000),species='Cod',splitLine=FALSE,incl.reference.points=FALSE) 
-
-
+ 
 
 plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHumans=TRUE,exclResidM1=TRUE){
   x<-bind_rows(histEaten,x)
@@ -131,7 +129,6 @@ plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHuman
   p<-unique(x$Prey)
   prey_pp<-pp[predPreyFormat %in% p]
 
-  
   if (pred !='all predators') {
     x<-filter(x,Predator==pred); 
     tit<-paste(tit,pred)
@@ -140,7 +137,7 @@ plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHuman
   pred_pp<-pp[predPreyFormat %in% p]
 
   if (dim(x)[[1]]==0) return(NULL)
-  
+  xxcel<<-x
   if (predPrey=='by prey') {
     pp<-prey_pp
     x <-droplevels(aggregate(eatenW~Year+Prey,data=x,sum))
@@ -150,12 +147,14 @@ plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHuman
     x <-droplevels(aggregate(eatenW~Year+Predator,data=x,sum))
     p<-ggplot(x, aes(x = Year, y = eatenW, fill = Predator)) 
   }
-  p +  geom_bar(stat = "identity") + 
+ 
+  p<-p +  geom_bar(stat = "identity") + 
     scale_fill_manual(values= pp[!is.na(names(pp))])+ 
     labs(x="", y = paste("Biomass eaten",plotLabels['DeadM'])) +
     ggtitle(tit) +
     theme_minimal() +
     theme(plot.title = element_text(size = 18, face = "bold")) 
+  return(p)
 }  
 
 

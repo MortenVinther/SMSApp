@@ -1,0 +1,3 @@
+# version: 1
+# target_url: http://ono.dtuaqua.dk:8282/SMSapp/
+# target_type: Shiny Server or Shiny Server Pro
