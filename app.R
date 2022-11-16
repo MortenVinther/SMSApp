@@ -61,7 +61,7 @@ my.environment<-environment()
 my.app.dir<-getwd()
 
 
-load_ecoRegion('North Sea')
+load_ecoRegion(ar='North Sea')
 
 selectedArea<-selectedAreas[1]
 doRunModel<-TRUE           # flag for re-running the prediction model

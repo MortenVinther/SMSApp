@@ -1,9 +1,9 @@
 
 # call to the OP program
-do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeOption=FALSE,writeExplPat=FALSE,source='') {
+do_OP<-function(readResSimple=TRUE,readResDetails=FALSE,readResStom=FALSE,writeOption=FALSE,writeExplPat=FALSE,source='',data_dir='Data') {
   op.n<<-op.n+1
 
-    #cat(op.n, "call source:", source, "  ,data_dir:",data_dir,"  ,readResSimple:",readResSimple," ,readResDetails:",readResDetails," ,readResStom:",readResStom," ,writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
+  #cat(op.n, "call source:", source, "  ,data_dir:",data_dir,"  ,readResSimple:",readResSimple," ,readResDetails:",readResDetails," ,readResStom:",readResStom," ,writeOption:",writeOption,"  writeExplPat:",writeExplPat,'\n')
    # write the F values
   Fvalues<-OP.trigger@Ftarget['init',]
   cat("1\n",Fvalues,"\n",file=file.path(data_dir,"op_multargetf.in")) # write F values

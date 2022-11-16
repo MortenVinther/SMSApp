@@ -1,15 +1,28 @@
 # load data for the selected area
 load_ecoRegion<-function(ar){
   
-  if (ar=='North Sea') {ard<-'Data';ars<<-'NS'} else if (ar=='Baltic Sea') {ard<-'Data_baltic';ars<<-'BS'}
+  if (ar=='North Sea') {ard<-'Data_northsea';ars<<-'NS'} else if (ar=='Baltic Sea') {ard<-'Data_baltic';ars<<-'BS'}
   
   load(file=file.path(ard,"environment.Rdata"),verbose=FALSE,envir=my.environment)
   
-  # command file for executing the OP program to make a prediction
-  cmd <<- paste0('cd "', file.path(my.app.dir,data_dir), '" &&  "./op" -maxfn 0 -nohess > ud.dat')
   
-  file.copy(file.path(data_dir,'op_config_master.dat'),file.path(data_dir,'op_config.dat'),overwrite = TRUE)
-  file.copy(file.path(data_dir,'op_exploitation_master.in'),file.path(data_dir,'op_exploitation.in'),overwrite = TRUE)
+  
+  # command file for executing the OP program to make a prediction
+  cmd <<- paste0('cd "', file.path('Data'), '" &&  "./op" -maxfn 0 -nohess > ud.dat')
+  
+  ### copy OP files
+  op.files<-c("area_names.in","just_one.in","op_c.in","op_consum.in","op_exploitation.in","op_f.in","op_length_weight_relations.in",
+              "op_m.in","op_m1.in","op_m1m2.in","op_multargetf.in","op_n.in","op_n_proportion_m2.in","op_other_n.in","op_price.in","op_prop_landed.in","op_propmat.in",
+              "op_reference_points.in","op_seed.in","op_size.in","op_ssb_rec_residuals.in","op_wcatch.in","op_wsea.in","species_names.in",
+              "op_msfd.dat","op.dat","op_config.dat","op_trigger.dat","sms.dat")
+
+  for (f.file in op.files) {
+    from.file<-file.path(my.app.dir,ard,f.file)
+    to.file<-file.path(my.app.dir,'Data',f.file)
+    tmp<-file.copy(from.file, to.file, overwrite = TRUE)
+  }
+  
+ 
   
 }
 

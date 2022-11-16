@@ -1,41 +1,88 @@
 #options and data for optimationzation
 # the character "#" is used as comment character, such that all text and numbers after # are skipped
 #
-2022 	# first.year 
-2061 	# last.year 
-1 	# first.run.no 
-1 	# first.iter.no 
-1 	# no.iter 
-#  HCR 
-1 1 
-#  trigger 
-0 175000 
-460000 570000 
-#  Ftarget 
-0 0 
-3 3 
-0.315591 0.24121 
-1 1 
-#  Fslope 
-0.1 0.1 
-0.1 0.1 
-0.1 0.1 
-1 1 
-#  SSB50 
-100 100 
-300 140 
-200 120 
-1 1 
-#  S1 
-1 1 
-30 14 
-20 12 
-1 1 
-#  SSBpenalty 
-1 1 
-2e+05 1e+05 
-204000 102000 
-1e+07 1e+07 
-#  weighting 
-1 1 
-0 	# at.age.weighting 
+########################################
+## first year of input data (option first.year)
+2022
+## last year (option last.year)
+2061
+########################################
+## First run number (option first.run.no). Default=1
+1
+########################################
+## First iteration number (option first.iter.no). Default=1
+1
+########################################
+## number of iterations (option no.iter)
+1
+########################################
+# HCR by species
+# 1: Target F
+#      F=Ftarget
+# 2: Target F, and known trigger T1 and T2
+#      F=0                        for     SSB<T1
+#      F=Ftarget*(SSB-T1)/(T2-T1) for  T1<SSB<T2
+#      F=Ftarget                  for  T2<SSB
+# 3: Target F and Fslope, and known trigger T1 and T2
+#      F=0                          for     SSB<T1
+#      F=Ftarget*(SSB-T1)/(T2-T1)   for  T1<SSB<T2
+#      F=Ftarget+(SSB-T2)/T2*Fslope for  T2<SSB
+#  4: Logistic curve
+#      F=Ftarget / (1+exp(S1 - S1/SSB50%*SSB)
+#  22, 33 and 44 is the same rule as 2,3 and 4 but TSB is used
+#     Herring       Sprat 
+          1           1 
+########################################
+# T1 and T2 trigger by species
+#     Herring       Sprat 
+          0    1.75e+05 
+    4.6e+05     5.7e+05 
+########################################
+# Values for Ftarget
+# 1) lower limit, 2) higher limit, 3) initialization, 4) estimation phase
+#     Herring       Sprat 
+          0           0 
+          3           3 
+     0.3156      0.2412 
+          1           1 
+########################################
+# Values for Fslope
+# 1) lower limit, 2) higher limit, 3) initialization, 4) estimation phase
+#     Herring       Sprat 
+        0.1         0.1 
+        0.1         0.1 
+        0.1         0.1 
+          1           1 
+########################################
+# Values for logistic curve, SSB50% of Ftarget (HCR=4)
+# 1) lower limit of SSB50% in 1000 tonnes , 2) higher limit, 3) initialization, 4) estimation phase
+#     Herring       Sprat 
+        100         100 
+        300         140 
+        200         120 
+          1           1 
+########################################
+# Values for logistic curve, S1 (HCR=4)
+# 1) lower limit of S1 in 1000 tonnes , 2) higher limit, 3) initialization, 4) estimation phase
+#     Herring       Sprat 
+          1           1 
+         30          14 
+         20          12 
+          1           1 
+########################################
+# Values for penalty function for SSB below limit (HCR=4)
+# 1) use penalty 0=no, 1=logistic, 2=simple power function 
+# 2) limit (SSB50%), 3) steepnes (SSB75%), 4) factor
+#     Herring       Sprat 
+          1           1 
+      2e+05       1e+05 
+   2.04e+05    1.02e+05 
+      1e+07       1e+07 
+########################################
+# relative weighting (e.g. price/kg, all sizes combined) of yield used in objective function
+#     Herring       Sprat 
+          1           1 
+########################################
+# use weighting factor by age (e.g. price) from file op_price.in
+# 0=no use; 1=use
+0
