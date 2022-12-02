@@ -1,7 +1,7 @@
 # load data for the selected area
 load_ecoRegion<-function(ar){
   
-  if (ar=='North Sea') {ard<-'Data_northSea';ars<<-'NS'} else if (ar=='Baltic Sea') {ard<-'Data_baltic';ars<<-'BS'}
+  if (ar=='North Sea') {ard<-'Data_northsea';ars<<-'NS'} else if (ar=='Baltic Sea') {ard<-'Data_baltic';ars<<-'BS'}
   
   load(file=file.path(ard,"environment.Rdata"),verbose=FALSE,envir=my.environment)
   
