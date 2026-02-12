@@ -1,35 +1,28 @@
 # file including functions for various plots
 
-plot_other<-function(sp,firsty,lasty,chOther,firstYear=stq_year, finalYear){
-  x<-firstYear:finalYear
-  y<-rep(1.0,length(x))
-  names(y)<-as.character(x)
-  if (firstYear==firsty) y[as.character(firsty)]<-chOther 
-  for (year in firsty:lasty) if (year>firstYear) {y[as.character(year)]<-y[as.character(year-1)]*chOther }
-  if (finalYear>lasty) for (year in ((lasty+1):finalYear)) y[as.character(year)]<-y[as.character(lasty)]
-  plot(x,y,ylab='stock abundance index',xlab='Year',main=sp,type='b')
-}
-
 
 plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),years=c(0,5000),species='Cod',splitLine=FALSE,incl.reference.points=FALSE,nox=2,noy=3) {
+
   a<-as_tibble(subset(res$out$detail_sum,Year>=years[1] & Year<=years[2] & Species %in% species))
   a2<-subset(histCondensed,Year>=years[1] & Year<=years[2] & Species %in% species)
   a<-bind_rows(a,a2)%>% mutate(Year=as.integer(Year)) %>% arrange(Year) 
+  
   b<-subset(res$out$detail_M2,Year>=years[1] & Year<=years[2] & Species %in% species)
   b2<-subset(histAnnoM,Year>=years[1] & Year<=years[2] & Species %in% species)
   b<-bind_rows(b,b2) %>% arrange(Year,Age)
-
-  if ("SSB" %in% ptype) {
+  
+   if ("SSB" %in% ptype) {
     pSSB<-ggplot(a,aes(x=Year,y=SSB))+
     geom_line(lwd=1.5)+
     geom_point(shape = 21, colour = "black", fill = "white", size = 2, stroke = 1.5)+
     labs(x='',y=plotLabels['SSB'],title=paste(species,'SSB',sep=', '))+
     ylim(0,max(a$SSB))+
     theme(plot.title = element_text(size = 16, face = "bold",hjust=0))
+    
     if (splitLine) pSSB<- pSSB+geom_vline(xintercept=stq_year,col='blue',lty=3,lwd=1)
     if (incl.reference.points) {
-       if (refPoints[species,'Blim']>0) pSSB<- pSSB+geom_hline(yintercept=refPoints[species,'Blim'],lty=2,lwd=1,col='red',,na.rm = TRUE)
-       if (refPoints[species,'Bpa']>0)   pSSB<- pSSB+geom_hline(yintercept=refPoints[species,'Bpa'],lty=3,lwd=1,col='green',na.rm = TRUE)
+       if ( refPoints[species,'Blim']>0) pSSB<- pSSB+geom_hline(yintercept=refPoints[species,'Blim'],lty=2,lwd=1,col='red')
+       if (refPoints[species,'Bpa']>0)   pSSB<- pSSB+geom_hline(yintercept=refPoints[species,'Bpa'],lty=3,lwd=1,col='green')
     }
   }
   
@@ -53,12 +46,12 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
      
      if (splitLine) pF<- pF+geom_vline(xintercept=stq_year,col='blue',lty=3,lwd=1)
      if (incl.reference.points) {
-       if ( refPoints[species,'Flim']>0) pF<- pF+geom_hline(yintercept=refPoints[species,'Flim'],lty=2,lwd=1,col='red',na.rm = TRUE)
-       if (refPoints[species,'Fpa']>0)   pF<- pF+geom_hline(yintercept=refPoints[species,'Fpa'],lty=3,lwd=1,col='green',na.rm = TRUE)
+       if ( refPoints[species,'Flim']>0) pF<- pF+geom_hline(yintercept=refPoints[species,'Flim'],lty=2,lwd=1,col='red')
+       if (refPoints[species,'Fpa']>0)   pF<- pF+geom_hline(yintercept=refPoints[species,'Fpa'],lty=3,lwd=1,col='green')
      }
   } 
   
-  if ("Yield_old" %in% ptype) {
+  if ("Yield" %in% ptype) {
     y <-aggregate(Yield~Year,data=a,sum)
     pY<-ggplot(y,aes(x=Year,y=Yield)) +
       geom_bar(stat = "identity")+
@@ -67,26 +60,12 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
     if (splitLine) pY<- pY+geom_vline(xintercept=stq_year,col='blue',lty=3,lwd=1)
   }  
   
-  
-  if ("Yield" %in% ptype) {
-    y<-select(a,Year,Yield,yield.core) %>% mutate(yield.outside=Yield-yield.core,Yield=NULL) %>% select(Year,yield.outside,yield.core)
-    y<-as.data.frame(y)
-    if (any(y$yield.outside>0)) titl<-'Catch inside and outside the North Sea' else titl<-'Catch'
-    y<-reshape(y,direction='long',varying = list(2:3))
-
-    pY<-ggplot(y, aes(x = Year, y = yield.outside, fill = as.factor(time)) )+
-      geom_bar(stat = "identity")+ 
-      labs(x='',y=plotLabels['Yield'],title=titl)+
-      theme(plot.title = element_text(size = 16, face = "bold"),legend.position="none")
-    
-    if (splitLine) pY<- pY+geom_vline(xintercept=stq_year,col='blue',lty=3,lwd=1)
-  }  
-  
   if ("Dead" %in% ptype) {
     y<-select(a,Year,Yield,DeadM1,DeadM2)
     y<-as.data.frame(y)
     if (any(y$DeadM2>0)) titl<-'Biomass removed\ndue to F, M1 and M2' else titl<-'Biomass removed\ndue to F and M1'
     y<-reshape(y,direction='long',varying = list(2:4))
+    
     pD<-ggplot(y, aes(x = Year, y = Yield, fill = as.factor(time)) )+
        geom_bar(stat = "identity")+ 
        labs(x='',y=plotLabels['DeadM'],title=titl)+
@@ -112,49 +91,114 @@ plot_summary_new<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M
   return(out)
 }
 
- 
+ #plot_summary_new(res=res$rv,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),years=c(0,5000),species='Cod',splitLine=FALSE,incl.reference.points=FALSE) 
 
-plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHumans=TRUE,exclResidM1=TRUE){
+
+plot_summary_old<-function(res,ptype=c('Yield','Fbar','SSB','Recruits','Dead','M2'),years=c(0,5000),species='Cod',splitLine=FALSE,incl.reference.points=FALSE,nox=2,noy=3) {
+  a<-subset(res$out$detail_sum,Year>=years[1] & Year<=years[2] & Species %in% species)
+  a2<-subset(histCondensed,Year>=years[1] & Year<=years[2] & Species %in% species)
+  a<-bind_rows(a,a2)%>% arrange(Year)
+  
+  b<-subset(res$out$detail_M2,Year>=years[1] & Year<=years[2] & Species %in% species)
+  b2<-subset(histAnnoM,Year>=years[1] & Year<=years[2] & Species %in% species)
+  b<-bind_rows(b,b2) %>% arrange(Year,Age)
+  
+  #X11(width=11, height=8, pointsize=12)
+  par(mfcol=c(nox,noy))
+  par(mar=c(3,4,3,2))
+  
+  
+  
+  if ("SSB" %in% ptype) {
+    plot(a$Year,a$SSB,type='b',lwd=3,xlab='',ylab=plotLabels['SSB'],main=paste(species,'SSB',sep=', '),ylim=c(0,max(a$SSB)))
+    if (splitLine) abline(v=SMS@last.year.model,lty=2, col='red')
+    if (incl.reference.points) {
+      if ( refPoints[species,'Blim']>0) abline(h=refPoints[species,'Blim'],lty=2,lwd=2,col='red')
+      if (refPoints[species,'Bpa']>0) abline(h=refPoints[species,'Bpa'],lty=3,lwd=2,col='green')
+    }
+  }
+  
+  if ("Recruits" %in% ptype) {
+    y<-tapply(a$Recruits,list(a$Year),sum)
+    barplot(y,space=1,ylab=plotLabels['Recruits'],xlab='',main=paste('Recruitment',sep=', '),ylim=c(0,max(y)))
+    if (splitLine) abline(v=stq_year,lty=2, col='red')
+  }  
+  
+  if ("Fbar" %in% ptype) {
+    plot(a$Year,a$Fbar,type='b',lwd=3,xlab='',ylab=plotLabels['Fbar'],main="Fishing mortality (F)",ylim=c(0,max(a$Fbar)))
+    if (splitLine) abline(v=SMS@last.year.model,lty=2, col='red')
+    if (incl.reference.points) {
+      if (refPoints[species,'Flim']>0) abline(h=refPoints[species,'Flim'],lty=2,lwd=2,col='red')
+      if (refPoints[species,'Fpa']>0) abline(h=refPoints[species,'Fpa'],lty=3,lwd=2,col='green')
+    }
+  } 
+  
+  if ("Yield" %in% ptype) {
+    y<-tapply(a$Yield,list(a$Year),sum)
+    barplot(y,space=1,ylab=plotLabels['Yield'],xlab='',main='Catch',ylim=c(0,max(y)))
+    if (splitLine) abline(v=stq_year,lty=2, col='red')
+  }  
+  
+  if ("Dead" %in% ptype) {
+    Yield<-tapply(a$Yield,list(a$Year),sum)
+    deadM1<-tapply(a$DeadM1,list(a$Year),sum)
+    deadM2<-tapply(a$DeadM2,list(a$Year),sum)
+    barplot(rbind(Yield,deadM1,deadM2),space=1,main='Biomass removed\ndue to F, M1 and M2',ylab=plotLabels['DeadM'],
+            col=c('red','green','plum'))
+    
+    if (splitLine) abline(v=stq_year,lty=2, col='red')
+  }  
+  
+  if ("M2" %in% ptype) if (any(b$M2>0)) {
+    M2<-tapply(b$M2,list(b$Year,b$Age),sum)
+    y<-as.numeric(dimnames(M2)[[1]])
+    plot(y,M2[,1],main=paste("M2 at age"),xlab="",ylab=plotLabels['M2'],
+         type='l',lwd=1.5,ylim=c(0,max(M2,na.rm=T)))
+    for (a in (2:(dim(M2)[2]))) if(max(M2[,a],na.rm=T)>0.001) lines(y,M2[,a],lty=a,col=a,lwd=2)
+    if (splitLine) abline(v=SMS@last.year.model,lty=2, col='red')
+  }
+}
+
+
+plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHumans=TRUE){
+  
   x<-bind_rows(histEaten,x)
-  pp<-setNames(my.colors,predPreyFormat)
- 
+  
   x<-filter(x,Year>=years[1] & Year<=years[2])
-  if (exclHumans)   x<-filter(x,Predator !=predPreyFormat[2])
-  if (exclResidM1)  x<-filter(x,Predator !=predPreyFormat[1])
+  if (exclHumans)  x<-filter(x,Predator !='Humans')
   
   if (prey != 'all preys') {
     tit<-paste(prey, "eaten by"); 
     x<-filter(x,Prey==prey) 
   } else tit<-'All preys eaten by'
-  p<-unique(x$Prey)
-  prey_pp<-pp[predPreyFormat %in% p]
-
+  
   if (pred !='all predators') {
     x<-filter(x,Predator==pred); 
     tit<-paste(tit,pred)
   } else tit<-paste(tit,'all predators')
-  p<-unique(x$Predator)
-  pred_pp<-pp[predPreyFormat %in% p]
-
-  if (dim(x)[[1]]==0) return(NULL)
-  xxcel<<-x
+  
+  scale_fill_pp <- function(...){
+    ggplot2:::manual_scale(
+      'fill', 
+      values = setNames(my.colors, predPreyFormat), 
+      ...
+    )
+  }
+  
   if (predPrey=='by prey') {
-    pp<-prey_pp
-    x <-droplevels(aggregate(eatenW~Year+Prey,data=x,sum))
-      p<-ggplot(x, aes(x = Year, y = eatenW, fill = Prey))  
+    x <-aggregate(eatenW~Year+Prey,data=x,sum)
+    p<-ggplot(x, aes(x = Year, y = eatenW, fill = Prey))  
+    
   } else   if (predPrey=='by predator') {
-    pp<-pred_pp
-    x <-droplevels(aggregate(eatenW~Year+Predator,data=x,sum))
+    x <-aggregate(eatenW~Year+Predator,data=x,sum)
     p<-ggplot(x, aes(x = Year, y = eatenW, fill = Predator)) 
   }
- 
-  p<-p +  geom_bar(stat = "identity") + 
-    scale_fill_manual(values= pp[!is.na(names(pp))])+ 
+  p +  geom_bar(stat = "identity") + 
+    scale_fill_pp() +
     labs(x="", y = paste("Biomass eaten",plotLabels['DeadM'])) +
     ggtitle(tit) +
     theme_minimal() +
     theme(plot.title = element_text(size = 18, face = "bold")) 
-  return(p)
 }  
 
 
@@ -173,7 +217,7 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
   nodes<-rbind(unique(data.frame(no=x$Predator.no, name=x$target)),
                unique(data.frame(no=x$Prey.no, name=x$source))) %>% unique() %>% arrange(no) %>% select(name)
   
-  #  need to reformat it.
+  # With networkD3, connection must be provided using id, not using real name like in the links dataframe. So we need to reformat it.
   x$IDsource=match(x$source, nodes$name)-1 
   x$IDtarget=match(x$target, nodes$name)-1
   
@@ -189,7 +233,8 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
   
   ii<-NULL
   for (i in col2hex(MyPalette)) ii<-paste(ii,paste0('"',i,'"'),sep=',')
-
+  ii
+  
   ColourScal <- paste0('d3.scaleOrdinal() .range([', ii,'])')
   
 
@@ -209,8 +254,8 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
 
 # Radar plot function
 plot_one<-function(x,type='Yield',plot.legend = TRUE) {
+  
   a1 <- filter(x$out$b,variable==type)
-
   a1[,2:(n.fleet+1)]<- a1[,2:(n.fleet+1)]/x$baseLine[,type]
   
   a2<- a1
@@ -223,8 +268,10 @@ plot_one<-function(x,type='Yield',plot.legend = TRUE) {
   
   DTU.col<-c("#990000",  # red
              "#F6D04D")  # yellow
-  ggradar(a,grid.max=gmax,grid.min=0,plot.title='',plot.legend=plot.legend,legend.position='top',
-          group.colours =DTU.col,legend.text.size = 18)
+  
+  #ggradar(a,grid.max=gmax,grid.min=0,plot.title='',plot.legend=plot.legend,legend.position='top', group.colours =DTU.col,legend.text.size = 18)
+  ggradar(a,grid.max=gmax,grid.min=0,plot.title='',plot.legend=plot.legend,legend.position='top', group.colours =DTU.col,legend.text.size = NULL)
+  
 }
 
 

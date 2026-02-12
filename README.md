@@ -1,2 +1,2 @@
 # SMSApp
-Forecast with SMS (stochastic Multispecies Models)
+Forecast with SMS (Stochastic Multispecies Models)

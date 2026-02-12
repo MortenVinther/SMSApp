@@ -2,7 +2,7 @@
 title: 'Reference points'
 output:
   html_document:
-    keep_md: yes
+    keep_md: true
 ---
 
 

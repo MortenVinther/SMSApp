@@ -2,7 +2,7 @@
 title: 'Results shown on radar plots'
 output:
   html_document:
-    keep_md: yes
+    keep_md: true
 ---
 
 

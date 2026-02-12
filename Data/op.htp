@@ -1,0 +1,392 @@
+#if !defined(_OP_)
+#  define _OP_
+
+class model_data : public ad_comm{
+  int i;
+  int do_optim;
+  int y;
+  int q;
+  int s;
+  int a;
+  int d;
+  int pred;
+  int prey;
+  data_int test_output;
+  data_int output;
+  data_int MSFD;
+  data_int fy;
+  data_int fy_out;
+  data_int ly;
+  int iter;
+  data_int multi;
+  data_int use_Nbar;
+  data_int area_FM;
+  data_int no_areas;
+  data_int nsp;
+  data_int fa;
+  data_int max_a;
+  int fq;
+  data_int lq;
+  data_int recq;
+  ivector faq;
+  data_matrix tmp;
+  ivector la;
+  ivector nplus;
+  ivector is_pred;
+  ivector is_prey;
+  int nOthPred;
+  int npr;
+  int first_VPA;
+  int first_VPA_prey;
+  int nprey;
+  ivector la_pred;
+  ivector la_VPA;
+  ivector cfa;
+  data_imatrix avg_F_ages;
+  data_matrix SSB_R_in;
+  ivector SSB_Rec_model;
+  dvector SSB_Rec_hockey_breakpoint;
+  dvector SSB_R_alfa;
+  dvector SSB_R_beta;
+  dvector SSB_R_s2;
+  dvector SSB_R_sd;
+  dmatrix Rec_add_inf;
+  data_int simple_ALK;
+  data_int consum_op;
+  data_ivector size_selection;
+  data_vector prey_pred_size_fac;
+  data_3array vulnerability;
+  data_4array season_overlap;
+  data_ivector size_select_model;
+  data_vector pref_size_ratio;
+  data_vector var_size_ratio;
+  data_vector pref_size_ratio_correction;
+  data_vector prey_size_adjustment;
+  data_vector other_suit_slope;
+  data_matrix min_pred_prey_size_ratio;
+  data_matrix max_pred_prey_size_ratio;
+  data_3array size_range_a_b;
+  data_imatrix pred_area_present;
+  data_3array pred_prey_comb;
+  data_matrix other_food;
+  data_vector other_food_size;
+  data_vector skip6;
+  data_imatrix OP_wsea;
+  data_imatrix OP_M;
+  data_imatrix OP_propmat;
+  data_imatrix OP_F;
+  data_imatrix OP_weca;
+  data_imatrix OP_prop_landed;
+  data_imatrix OP_stock_dist;
+  data_imatrix OP_consum;
+  data_matrix growth_model;
+  int do_growth_all;
+  int do_growth_type_1;
+  int do_growth_type_10;
+  ivector do_growth_sp;
+  data_vector stochastic_recruitment;
+  int rec_covar;
+  int rec_readIn;
+  ivector do_Equisim;
+  data_vector rec_noise_trunc_a;
+  data_vector rec_noise_trunc_b;
+  dmatrix rec_noise_trunc;
+  data_vector recruit_adjust;
+  data_ivector recruit_adjust_CV;
+  data_vector recruit_min;
+  dvector recruit_max;
+  data_ivector F_or_C;
+  int anyF;
+  int anyF31;
+  int allF11;
+  int anyC;
+  data_int max_M2_iteration;
+  data_number max_M2_sum2;
+  data_imatrix OP_other_N;
+  int loc_nOthPred;
+  data_vector other_pred_N_change;
+  data_ivector other_pred_N_first_year;
+  data_ivector other_pred_N_last_year;
+  data_int do_bio_demer;
+  data_imatrix bio_demer_ages;
+  data_int do_bio_small;
+  data_imatrix bio_small_ages;
+  data_int do_bio_pelag;
+  data_imatrix bio_pelag_ages;
+  data_int do_bio_forage;
+  data_imatrix bio_forage_ages;
+  data_int do_M2_bar;
+  data_imatrix M2_bar_ages;
+  data_int do_mean_weight_at_age;
+  data_ivector mean_weight_at_age_sp;
+  data_int do_community_mean_age;
+  data_ivector community_mean_weight_sp;
+  data_int do_mean_weight_C;
+  data_ivector mean_weight_C_sp;
+  data_int do_community_mean_C;
+  data_ivector community_mean_weight_C_sp;
+  data_int do_community_F;
+  data_ivector community_F_sp;
+  data_int do_community_M;
+  data_ivector community_M_sp;
+  data_int do_life_expectancy;
+  data_ivector life_expectancy_age;
+  dvector firstN;
+  data_int do_community_life_expectancy;
+  data_ivector community_life_expectancy_age;
+  data_vector community_life_expectancy_weighting;
+  dvector community_life_expectancy;
+  data_int do_size_spectra;
+  data_ivector size_spectra_sp;
+  data_int do_LFI;
+  data_ivector LFI_sp;
+  data_ivector LFI_age;
+  int tmpA;
+  data_matrix coVarianceRec;
+  dmatrix chol_coVarianceRec;
+  data_ivector SSB_Rec_nobs;
+  data_matrix SSB_Rec_residuals;
+  data_3array SSB_Rec_EquiSim;
+  data_int nEquiSim;
+  int iEquiSim;
+  data_3array SSB_Rec_EquiSim_stoch;
+  data_int seed;
+  int last_age;
+  data_matrix L_W_ab;
+  data_matrix N_init;
+  data_4array N_other_input;
+  data_4array N_dist;
+  data_5array C_input;
+  int lyF;
+  data_5array F_input;
+  data_4array exploitation_pattern;
+  data_4array prop_landed;
+  data_4array weca_input;
+  data_3array west_input;
+  data_3array propmat;
+  data_3array M_fixed;
+  data_4array consum_input;
+  data_3array n_proportion_m2;
+  data_4array consum_ab;
+  data_3array price;
+  data_4array size_sea_input;
+  data_4array prey_w;
+  data_4array lsea;
+  data_4array M1;
+  data_matrix reference_points;
+  data_3array growth_type1_regr;
+  data_3array growth_type1_in_year;
+  data_3array growth_ratio_weca_west;
+  data_matrix growth_min_w;
+  data_matrix growth_max_w;
+  data_matrix growth_type10_regr;
+  int repetition;
+  data_int no_rep;
+  data_matrix Fcombination;
+  data_int fy_op;
+  data_int ly_op;
+  data_int first_no_run;
+  data_int first_no_iter;
+  data_int no_iter;
+  int last_no_iter;
+  data_ivector HCR;
+  data_vector T1;
+  data_vector T2;
+  data_vector Flow_target;
+  data_vector Fhigh_target;
+  data_vector Finit_target;
+  data_ivector phase_target;
+  data_vector Flow_slope;
+  data_vector Fhigh_slope;
+  data_vector Finit_slope;
+  data_ivector phase_slope;
+  data_vector low_SSB50;
+  data_vector high_SSB50;
+  data_vector init_SSB50;
+  data_ivector phase_SSB50;
+  data_vector low_S1;
+  data_vector high_S1;
+  data_vector init_S1;
+  data_ivector phase_S1;
+  data_ivector penalty_use;
+  data_vector penalty_limit;
+  data_vector penalty_SSB75;
+  data_vector penalty_factor;
+  ivector penalty_number;
+  dvector penalty_S1;
+  data_vector YieldWeight;
+  data_int use_price;
+  dmatrix environment;
+  d3_array rn;
+  int ly_plus_1;
+  dmatrix M2bar;
+  dvector bio_demer;
+  dvector bio_small;
+  dvector bio_pelag;
+  dvector bio_forage;
+  dvector comm_Fland;
+  dvector comm_Fall;
+  dvector comm_M;
+  dvector comm_M2;
+  dmatrix life_expectancy;
+  dmatrix mw_C;
+  dmatrix tot_C;
+  dvector mw_C_community;
+  dvector LFI;
+  dmatrix penalty_y;
+  dvector penalty;
+  double sum_yield_value;
+  double sum_yield_global;
+  ~model_data();
+  model_data(int argc,char * argv[]);
+  friend class model_parameters;
+};
+
+class model_parameters : public model_data ,
+  public function_minimizer
+{
+public:
+  ~model_parameters();
+  void preliminary_calculations(void);
+  void set_runtime(void);
+  static int mc_phase(void)
+  {
+    return initial_params::mc_phase;
+  }
+  static int mceval_phase(void)
+  {
+    return initial_params::mceval_phase;
+  }
+  static int hessian_phase(void)
+  {
+    return initial_params::in_hessian_phase;
+  }
+  static int sd_phase(void)
+  {
+    return initial_params::sd_phase;
+  }
+  static int current_phase(void)
+  {
+    return initial_params::current_phase;
+  }
+  static int last_phase(void)
+  {
+    return (initial_params::current_phase
+      >=initial_params::max_number_phases);
+  }
+  static prevariable& current_feval(void)
+  {
+    return *objective_function_value::pobjfun;
+  }
+private:
+  dvariable adromb(dvariable(model_parameters::*f)(const dvariable&), double a, double b, int ns)
+  {
+    using namespace std::placeholders;
+    _func func = std::bind(f, this, _1);
+    return function_minimizer::adromb(func, a, b, ns);
+  }
+  ivector integer_control_flags;
+  dvector double_control_flags;
+  param_init_bounded_number_vector Ftarget;
+  param_init_bounded_number_vector log_Fslope;
+  param_init_bounded_number_vector SSB50;
+  param_init_bounded_number_vector S1;
+  param_number prior_function_value;
+  param_number likelihood_function_value;
+  objective_function_value f;
+  param_vector Factual;
+  param_4array west;
+  param_5array weca;
+  param_5array size_sea;
+  param_5array consum;
+  param_5array N_other;
+  param_4array N_global;
+  param_matrix N_dll;
+  param_matrix SSB;
+  param_matrix TSB;
+  param_matrix Fbar;
+  param_matrix yield_global;
+  param_matrix CWsum_global;
+  param_matrix yield_value;
+  param_matrix deadM2w;
+  param_matrix deadMw;
+  param_5array N;
+  param_5array Nbar;
+  param_5array NbarStom;
+  param_5array F;
+  param_5array M;
+  param_5array M2;
+  param_5array Z;
+  param_5array C;
+  param_4array yield;
+  param_4array CWsum;
+  param_4array part_M2;
+  param_3array deadM1;
+  param_3array deadM2;
+  param_3array deadM;
+  param_3array deadF;
+  param_3array deadZ;
+  param_3array annoM1;
+  param_3array annoM2;
+  param_3array annoM;
+  param_3array annoZ;
+  param_3array annoF;
+  param_3array annoC;
+  param_3array mean_weca;
+  param_matrix old_M2;
+  param_stddev_vector avg_yield;
+  param_stddev_vector yield_ly;
+  param_stddev_vector avg_SSB;
+  param_stddev_vector SSB_ly;
+public:
+  virtual void userfunction(void);
+  virtual void report(const dvector& gradients);
+  virtual void final_calcs(void);
+  model_parameters(int sz,int argc, char * argv[]);
+  virtual void initializationfunction(void);
+ void calc_growth_10(int y, int q);
+ void calc_growth(int y);
+ void calc_optimal_F(int y,int first_sp, int last_sp);
+ void init_F(int y,int r);
+ void calc_F(int y, int q, int d);
+ void calc_anno_mortality_and_weight(int my_fy, int my_ly);
+ void write_N_output();
+ void write_N_output_dll();
+ void calc_SSB(int y);
+ void get_N_global_at_age(int y, int q);
+ void calc_Z(int y, int q, int d);
+ void calc_F_from_Catch(int y, int q, int d, int s);
+ void calc_yield_value(int y);
+ void calc_C_yield(int y);
+ void get_N_bar_at_age(int y, int q, int d);
+ void calc_M2_simple(int y,int q, int d,dvector other_food, dvar_matrix size, dmatrix prey_w, dvar_matrix consum, dvar_matrix Nbar, dvar_matrix& M2);
+ void calc_M2(int y, int q, int d);
+ void distribute_stock(int y, int q);
+ dvariable suit(int y, int q, int d, int pred,int prey,dvariable pred_size,dvariable prey_size);
+ dvariable other_suit(int pred,dvariable pred_size,int y, int q, int d);
+ dvariable calc_recruit(int s, dvariable ssb, dvariable noise, double adjust);
+ void SSB_recruit(int y);
+ void write_M2_simple(int y,int q, int d,dvector other_food, dvar_matrix size, dmatrix prey_w, dvar_matrix consum, dvar_matrix Nbar, dvar_matrix& M2);
+ void write_var_other_sp();
+ void write_part_M2();
+ void print_summary_qd();
+ void print_summary_anno();
+ void print_anno_M();
+ void calc_M2bar(int my_fy, int my_ly);
+ void print_OP_Fcombinations(int r);
+ void print_condensed();
+ void print_condensed_long();
+ void calc_indicators_system();
+ void calc_LFI();
+ void print_avg_indicators_system(int r);
+ void print_indicators_system(int r);
+ void calc_life_expectancy(ivector options);
+ void calc_mean_weight_catch();
+ void print_indicators_species();
+ void print_avg_indicators_species(int r);
+ void print_indicators();
+ void print_optim_par();
+ void print_mean_weights();
+
+};
+#endif

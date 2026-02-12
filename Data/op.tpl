@@ -28,7 +28,7 @@ GLOBALS_SECTION
  // いいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいい
 
 DATA_SECTION
-  !! cout<<"OP version February 2022 using ADMB version 12.2"<<endl;
+  !! cout<<"OP version February 2026 using ADMB version 13.2"<<endl;
 
  int i;
  int do_optim;
@@ -486,10 +486,11 @@ DATA_SECTION
  !! }
 
  //  Read S/R residuals from file
- !! if (rec_readIn==0) { ad_comm::change_datafile_name("just_one.in"); tmpA= -1;}
- !! else { ad_comm::change_datafile_name("op_ssb_rec_residuals.in"); tmpA=nsp;}
- init_ivector SSB_Rec_nobs(first_VPA,tmpA)
- init_matrix SSB_Rec_residuals(first_VPA,tmpA,1,SSB_Rec_nobs)
+ !! if (rec_readIn==0)  ad_comm::change_datafile_name("just_one.in");
+ !! else ad_comm::change_datafile_name("op_ssb_rec_residuals.in");
+ init_ivector SSB_Rec_nobs(first_VPA,nsp)
+ 
+ init_matrix SSB_Rec_residuals(first_VPA,nsp,1,SSB_Rec_nobs)
  !! if (test_output==3 && rec_readIn==1) cout<<"op_ssb_rec_residuals.in:"<<endl<<SSB_Rec_residuals<<endl;
  
  // Equisim parameter estimates
@@ -866,8 +867,9 @@ PARAMETER_SECTION
   //matrix yield_value(fy_op,ly_op,first_VPA,nsp)
   matrix yield_value(fy,ly,first_VPA,nsp)
   matrix deadM2w(fy,ly,first_VPA,nsp)
-  matrix deadMw(fy,ly,first_VPA,nsp)
   matrix deadM2w_core(fy,ly,first_VPA,nsp)
+  matrix deadMw(fy,ly,first_VPA,nsp)
+  matrix F_core(fy,ly,first_VPA,nsp)
   matrix deadMw_core(fy,ly,first_VPA,nsp)
 
 
@@ -1984,11 +1986,12 @@ FUNCTION void print_OP_Fcombinations(int r);
   if (test_output==10) cout<<"file op_average_val.out is done"<<endl;
 
 
+
 FUNCTION void print_condensed();
  int s,y,q,a,yy;
  double Fbarl;
  ofstream res("op_condensed.out",ios::out);
- res <<"Year Species.n yield CWsum CWsum.core Fbar.anno Fbar SSB TSB recruit value";
+ res <<"Year Species.n yield CWsum CWsum.core Fbar.anno Fbar SSB TSB recruit value eaten";
  if (do_optim==1) res <<" penalty";
  res<<endl;
  if (output==20 || output==25 || output==26) yy=ly; else yy=fy_out;
@@ -2004,9 +2007,10 @@ FUNCTION void print_condensed();
        res<<CWsum_global(y,s)<<" "<<CWsum_global_core(y,s)<<" "<<Fbarl<<" "<<Fbar(y,s)<<" ";
        res<<SSB(y,s)<<" "<<TSB(y,s)<<" ";
        res<<N_global(y,recq,s,fa)<<" ";
-       res<<yield_value(y,s)<<endl;
+       res<<yield_value(y,s)<<" ";
+       res<< deadM2w(y,s)<<endl;
      }
-     else res<<y<<" "<<s<<" "<<yield_global(y,s)<<" "<<CWsum_global(y,s)<<" "<<CWsum_global_core(y,s)<<" "<<Fbar(y,s)<<" "<<Fbar(y,s)<<" "<<SSB(y,s)<<" "<<TSB(y,s)<<" "<<N_global(y,recq,s,fa)<<" "<<yield_value(y,s)<<" "<<penalty_y(y,s)<<endl;
+     else res<<y<<" "<<s<<" "<<yield_global(y,s)<<" "<<CWsum_global(y,s)<<" "<<CWsum_global_core(y,s)<<" "<<Fbar(y,s)<<" "<<Fbar(y,s)<<" "<<SSB(y,s)<<" "<<TSB(y,s)<<" "<<N_global(y,recq,s,fa)<<" "<<yield_value(y,s)<<" "<<deadM2w(y,s)<<" "<<penalty_y(y,s)<<endl;
    }
  }
  res.close();

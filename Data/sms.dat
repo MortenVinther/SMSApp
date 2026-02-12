@@ -74,12 +74,12 @@
 ########################################
 ## various information by species
 # 1. last age 
-# 2. first age where catch data are used (else F=0 assumed), First age if species is other predator 
+# 2. first age where catch data are used (else F=0 assumed)
 # 3. last age with age dependent fishing selection
 # 4. Esimate F year effect from effort data. 0=no, 1=yes
 # 5. Last age included in the catch at age likelihood (normally last age)
 # 6. plus group, 0=no plus group, 1=plus group
-# 7. predator species, 0=no, 1=VPA predator, 2=Other predator 
+# 7. predator species, 0=no, 1=VPA predator, 2=Other predator
 # 8. prey species, 0=no, 1=yes
 # 9. Stock Recruit relation
 #      1=Ricker, 2=Beverton & Holt, 3=Geom mean,
@@ -142,7 +142,7 @@
 # second=CPUE observations,
 # third=SSB/R relations
 # fourth=stomach observations, weight proportions 
-# fifth=stomach observations, number at length
+# fifth=stomach observations, number at length 
 ##
 0 0 0 0.1 1  # 1 Fulmar 
 0 0 0 0.1 1  # 2 Guillemot 
@@ -318,14 +318,14 @@
 1975 	#  Sole 
 ########################################
 ## year season combinations with zero catch (F=0) (option zero.catch.year.season)
-# 0=no, all year-seasons have catches,
+# 0=no, all year-seasons have catchs,
 # 1=yes there are year-season combinations with no catch.
 #   Read from file zero_catch_seasons_ages.in
 # default=0
 1
 ########################################
 ## season age combinations with zero catch (F=0) (option zero.catch.season.ages)
-# 0=no, all seasons have catches,
+# 0=no, all seasons have catchs,
 # 1=yes there are seasons with no catch. Read from file zero_catch_season_ages.in
 # default=0
 1
@@ -475,7 +475,7 @@
              1           1           1           1           1           1           1           1           1           1           1           1           1           1           1           1           1           1           1           1 
 ########################################
 ## # Use estimated scaling factor to link number of observation to variance for stomach observation likelihood (option stom_obs_var)
-#    0=no, do not estimate factor (assumed=1);  1=yes, estimate the factor;  2=equal weight (1) for all samples
+#    0=no, do not estiamte factor (assumed=1);  1=yes, estimate the factor;  2=equal weight (1) for all samples
 #
 # by predator
 #       Fulmar   Guillemot    Her.Gull   Kittiwake    GBB.Gull      Gannet      Puffin   Razorbill   A.radiata  G.gurnards W.horse.mac N.horse.mac   Grey.seal  H.porpoise        Hake         Cod     Whiting     Haddock      Saithe    Mackerel 
@@ -530,13 +530,13 @@
 2
 # other food suitability slope (default=-1) (option phase.other.suit.slope)
 2
-# preferred size ratio (default=2) (option phase.pref.size.ratio)
+# prefered size ratio (default=2) (option phase.pref.size.ratio)
 2
 # predator size ratio adjustment factor (default=-1) (option phase.pref.size.ratio.correction))
 -1
 # prey species size adjustment factor (default=-1) (option phase.prey.size.adjustment)
 -1
-# variance of preferred size ratio (default=2) (option phase.var.size.ratio)
+# variance of prefered size ratio (default=2) (option phase.var.size.ratio)
 2
 # season overlap (default=-1) (option phase.season.overlap)
 2

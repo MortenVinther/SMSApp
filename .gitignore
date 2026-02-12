@@ -44,9 +44,3 @@ Data/*.out
 Data/op.rep
 Data/op.log
 Data/ud.dat
-Data/admodel.hes
-Data_baltic/*.out
-Data_baltic/op.rep
-Data_baltic/op.log
-Data_baltic/ud.dat
-Data_baltic/admodel.hes
