@@ -1,15 +1,15 @@
 rm(list = ls())
 suppressPackageStartupMessages(library(shiny))
-library(shinyhelper)
-library(shinyjs)  
+suppressMessages(library(shinyhelper))
+suppressMessages(library(shinyjs))  
 suppressMessages(library(DT))
-library(readr)
+suppressMessages(library(readr))
 suppressMessages(library(dplyr))
-library(ggplot2)
+suppressMessages(library(ggplot2))
 suppressMessages(library(wordcloud))
-library(RColorBrewer)
-library("cowplot")
-library("shinyWidgets")
+suppressMessages(library(RColorBrewer))
+suppressMessages(library("cowplot"))
+suppressMessages(library("shinyWidgets"))
 
 #devtools::install_github("ricardo-bion/ggradar", dependencies = TRUE)
 library(ggradar)
@@ -611,8 +611,15 @@ ui <- navbarPage(title = "SMS",
                              conditionalPanel("input.tabOpt=='Download detailed output'",
                                               br(),
                                               checkboxGroupInput(inputId="downloadData",label='Select data to download',
-                                                                 choices =c('historical summary','historical who eats whom and M2',
-                                                                            'predicted summary','predicted summary details','predicted who eats whom and M2' ),
+                                                                 choices =c('historical summary',
+                                                                            'historical details',
+                                                                            'historical who eats whom summary',
+                                                                            'historical who eats whom and partial M2',
+                                                                            'predicted summary',
+                                                                            'predicted summary by year',
+                                                                            'predicted summary details',
+                                                                            'predicted who eats whom summary',
+                                                                            'predicted who eats whom and partial M2'),
                                                                  selected = 'predicted summary',
                                                                  inline = FALSE),
                                               br(),
@@ -713,19 +720,97 @@ ui <- navbarPage(title = "SMS",
        # 1. Create a temporary directory to house the files
        temp_directory <- file.path(tempdir(), "my_files")
        dir.create(temp_directory, showWarnings = FALSE)
+       file_names<-NULL
        
-       # 2. Define the file names and paths
-       file_names <- c("data_part1.csv", "data_part2.csv", "data_part3.csv")
-       file_paths <- file.path(temp_directory, file_names)
+        if ('historical summary' %in% input$downloadData){
+          fitmp<-"historical_summary.csv"
+          checkF<-file.exists(file.path(data_dir,'hist_condensed.csv'))
+          if (checkF) done<-file.copy(file.path(data_dir,'hist_condensed.csv'), file.path(temp_directory, fitmp),overwrite = TRUE)
+          if (checkF) if (done) file_names<-c(file_names,fitmp)
+        }
        
-       # 3. Write individual files to the temp directory
-       write.csv(mtcars[1:10, ], file_paths[1])
-       write.csv(mtcars[11:20, ], file_paths[2])
-       write.csv(mtcars[21:32, ], file_paths[3])
+       if ('historical details' %in% input$downloadData){
+         fitmp<-"historical_summary_details.csv"
+         checkF<-file.exists(file.path(data_dir,'historical_summary_details.csv'))
+         if (checkF) done<-file.copy(file.path(data_dir,'historical_summary_details.csv'), file.path(temp_directory, fitmp),overwrite = TRUE)
+         if (checkF) if (done) file_names<-c(file_names,fitmp)
+       }
        
-       # 4. Zip the files. 
-       # Use zip() or zip::zipr() for better cross-platform compatibility.
-       zip(zipfile = file, files = file_paths, flags = "-j") 
+       if ('historical who eats whom summary' %in% input$downloadData){
+         fitmp<-"historical_who_eats_whom_summary.csv"
+         checkF<-file.exists(file.path(data_dir,"who_eats_whom_historical.csv"))
+         if (checkF) done<-file.copy(file.path(data_dir,"who_eats_whom_historical.csv"), file.path(temp_directory, fitmp),overwrite = TRUE)
+         if (checkF) if (done) file_names<-c(file_names,fitmp)
+       } 
+  
+       if ('historical who eats whom and partial M2' %in% input$downloadData){
+                 
+         fitmp<-"historical_who_eats_whom_and_partial_M2.csv"
+         checkF<-file.exists(file.path(data_dir,fitmp))
+         if (checkF) done<-file.copy(file.path(data_dir,fitmp), file.path(temp_directory, fitmp),overwrite = TRUE)
+         if (checkF) if (done) file_names<-c(file_names,fitmp)
+       } 
+   
+       
+        
+       if ('predicted summary' %in% input$downloadData) {
+          fitmp<-"predicted_summary.csv"
+          checkF<-file.exists(file.path(data_dir,'op_condensed.out')) 
+          if (checkF) {
+            a<-read.table(file.path(data_dir,'op_condensed.out'),header=T)
+            a<-data.frame(Year=a$Year,Species.n=a$Species.n,Species=spNames[a$Species.n],Yield=a$yield*plotUnits['Yield'],Fbar=a$Fbar*plotUnits['Fbar'], SSB=a$SSB*plotUnits['SSB'], TSB=a$TSB*plotUnits['TSB'],Recruits=a$recruit*plotUnits['Recruits'])
+            write.csv(a, file.path(temp_directory,  fitmp), row.names = FALSE)
+            file_names<-c(file_names,fitmp)
+          }
+       }
+       
+        if ('predicted summary by year' %in% input$downloadData) {
+          fitmp<-"predicted_summary_by_year.csv"
+          checkF<-file.exists(file.path(data_dir,'op_condensed_long.out')) 
+          if (checkF) {
+            a<-read.table(file.path(data_dir,'op_condensed_long.out'),header=T)
+            a<-data.frame(Year=a$Year, Species=spNames[a$Species.n], Species.n=a$Species.n,
+                           Yield=a$yield*plotUnits['Yield'],Fbar=a$Fbar*plotUnits['Fbar'], 
+                           SSB=a$SSB*plotUnits['SSB'], TSB=a$TSB*plotUnits['SSB'],Recruits=a$recruit*plotUnits['Recruits'], 
+                           DeadM1=(a$DeadM-a$DeadM2)*plotUnits['DeadM'], DeadM2=a$DeadM2*plotUnits['DeadM'])
+            write.csv(a, file.path(temp_directory,  fitmp), row.names = FALSE)
+            file_names<-c(file_names,fitmp)
+          }
+        }
+       
+       if ('predicted summary details' %in% input$downloadData) {
+         fitmp<-"predicted_summary_details.csv"
+         checkF<-file.exists(file.path(data_dir,'op_condensed_long.out')) 
+         if (checkF) {
+           a<-read.table(file.path(data_dir,'op_summary.out'),header=T)
+           a$Species<-spNames[a$Species.n]
+           a<-subset(a, select=c(Year,Quarter,Species.n,Species,Age,M, M1,M2,Z,N,Nbar,west,C,weca,propmat,consum))
+           a<-data.frame(a,deadM2=a$M2*a$Nbar*a$west,deadM1=a$M1*a$Nbar*a$west,deadM=a$M*a$Nbar*a$west)
+           write.csv(a, file.path(temp_directory,  fitmp), row.names = FALSE)
+           file_names<-c(file_names,fitmp)
+         }
+       }
+       
+       if ('predicted who eats whom and partial M2' %in% input$downloadData) {
+         fitmp<-"predicted_who_eats_whom_and_partial_M2.csv"
+         checkF<-file.exists(file.path(data_dir,'op_part_m2.out')) 
+         if (checkF) {
+           a<-read.table(file.path(data_dir,'op_part_m2.out'),header=T)
+           a$Predator<-spNames[a$Predator.no]
+           a$Prey<-spOtherNames[a$Prey.no+1] # +1 because 0 is reserved for "other food"
+           a<- a %>%  select(Year,Quarter,Predator.no, Predator, Predator.age, Predator.size, Prey.no, Prey, Prey.age, Prey.size, Part.M2,available,suitability)
+           write.csv(a, file.path(temp_directory,  fitmp), row.names = FALSE)
+           file_names<-c(file_names,fitmp)
+         }
+       }
+       
+ 
+       if (length(file_names)>0) {
+         file_paths <- file.path(temp_directory, file_names)
+         
+         # Use zip() or zip::zipr() for better cross-platform compatibility.
+         zip(zipfile = file, files = file_paths, flags = "-j") 
+       }
      },
      contentType = "application/zip"
    )

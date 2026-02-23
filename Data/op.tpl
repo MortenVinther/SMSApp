@@ -28,7 +28,7 @@ GLOBALS_SECTION
  // いいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいいい
 
 DATA_SECTION
-  !! cout<<"OP version February 2026 using ADMB version 13.2"<<endl;
+  !! cout<<"OP version February  2026 using ADMB version 13.2"<<endl;
 
  int i;
  int do_optim;
@@ -412,11 +412,12 @@ DATA_SECTION
  !!   cout<<"other_pred_N_last_year:"<<endl<<other_pred_N_last_year<<endl;
  !! }
 
+
  !! if (test_output>=1) cout<<"op_dat.dat completed"<<endl;
 
  !! if (MSFD==1)  ad_comm::change_datafile_name("op_msfd.dat");
  !! else ad_comm::change_datafile_name("just_one.in");
- 
+
 
  init_int do_bio_demer
  init_imatrix  bio_demer_ages(1,2,1,nsp)    //first an last age to be included
@@ -469,10 +470,11 @@ DATA_SECTION
   init_ivector  LFI_sp(1,nsp)
   init_ivector  LFI_age(1,nsp)
  
+
  
  // #################### Read data files
-  
-  
+
+
  // co-variance matrix of log stock recruits
  int tmpA;
  !! if (rec_covar==0) { ad_comm::change_datafile_name("just_one.in"); tmpA= -1;}
@@ -486,13 +488,13 @@ DATA_SECTION
  !! }
 
  //  Read S/R residuals from file
- !! if (rec_readIn==0)  ad_comm::change_datafile_name("just_one.in");
- !! else ad_comm::change_datafile_name("op_ssb_rec_residuals.in");
- init_ivector SSB_Rec_nobs(first_VPA,nsp)
- 
- init_matrix SSB_Rec_residuals(first_VPA,nsp,1,SSB_Rec_nobs)
+ !! if (rec_readIn==0) { ad_comm::change_datafile_name("just_one.in"); tmpA= first_VPA;}
+ !! else { ad_comm::change_datafile_name("op_ssb_rec_residuals.in"); tmpA=nsp;}
+ init_ivector SSB_Rec_nobs(first_VPA,tmpA)
+
+ init_matrix SSB_Rec_residuals(first_VPA,tmpA,1,SSB_Rec_nobs)
  !! if (test_output==3 && rec_readIn==1) cout<<"op_ssb_rec_residuals.in:"<<endl<<SSB_Rec_residuals<<endl;
- 
+
  // Equisim parameter estimates
  !! if (sum(do_Equisim)==0) ad_comm::change_datafile_name("just_one.in"); else  ad_comm::change_datafile_name("op_eqsim.in");
  init_3darray SSB_Rec_EquiSim(first_VPA,nsp,1,3,1,4)  // 1-4: alfa, beta, CV, weight.
@@ -1759,7 +1761,7 @@ FUNCTION void SSB_recruit(int y);
 FUNCTION void write_M2_simple(int y,int q, int d,dvector other_food, dvar_matrix size, dmatrix prey_w, dvar_matrix consum, dvar_matrix Nbar, dvar_matrix& M2);
  int pred,pred_a,prey,prey_a,pred_l,prey_l;
  dvariable pred_size,prey_size;
- dvariable tmp,partM2;
+ dvariable tmp,partM2,avOut;
  dvar_matrix avail_food(1,npr,fa,max_a);
  
  avail_food=0.0;
@@ -1777,6 +1779,10 @@ FUNCTION void write_M2_simple(int y,int q, int d,dvector other_food, dvar_matrix
             if  ((pred_size*prey_pred_size_fac(pred))>=prey_size) {
                 avail_food(pred,pred_a)+=Nbar(prey,prey_a)*prey_w(prey,prey_a)*suit(y,q,d,pred,prey,pred_size,prey_size);
       }}}}
+  	  avOut=other_food(pred)*other_suit(pred,pred_size,y,q,d);  //  other food 
+	  prey=0; prey_a=-9; prey_size=-1; partM2=-1;
+	  pmo<<y<<" "<<q<<" "<<pred<<" "<<pred_a<<" "<<pred_size<<" "<<prey<<" "<<prey_a<<" "<<prey_size<<" "<<partM2<<" "<<avOut<<" "<<other_suit(pred,pred_size,y,q,d)<<endl; 	
+
       avail_food(pred,pred_a)+=other_food(pred)*other_suit(pred,pred_size,y,q,d);  // add other food
       tmp=Nbar(pred,pred_a)*consum(pred,pred_a)/avail_food(pred,pred_a);
        //calc M2
@@ -1785,8 +1791,9 @@ FUNCTION void write_M2_simple(int y,int q, int d,dvector other_food, dvar_matrix
           for (prey_a=faq(q);prey_a<=la(prey);prey_a++) {
             prey_size=size(prey,prey_a);
             if ((pred_size*prey_pred_size_fac(pred))>=prey_size) {
+			   avOut=Nbar(prey,prey_a)*prey_size*suit(y,q,d,pred,prey,pred_size,prey_size); 
                partM2=tmp*suit(y,q,d,pred,prey,pred_size,prey_size);
-               if (partM2>0)  pmo<<y<<" "<<q<<" "<<d<<" "<<pred<<" "<<pred_a<<" "<<prey<<" "<<prey_a<<" "<<partM2<<endl;
+               if (partM2>0)  pmo<<y<<" "<<q<<" "<<pred<<" "<<pred_a<<" "<<pred_size<<" "<<prey<<" "<<prey_a<<" "<<prey_size<<" "<<partM2<<" " <<avOut<<" "<<suit(y,q,d,pred,prey,pred_size,prey_size)<<endl;
             }
       }}}
      }
@@ -1813,7 +1820,8 @@ FUNCTION void write_part_M2();
  int y,q,d,file_do;
 
  ofstream pmo("op_part_m2.out",ios::out);
- pmo <<"Year Quarter Area Predator.no Predator.age Prey.no Prey.age Part.M2"<<endl;
+ pmo <<"Year Quarter Predator.no Predator.age Predator.size Prey.no Prey.age Prey.size  Part.M2 available suitability"<<endl;
+ 
  pmo.close();
  for (y=fy_out;y<=ly;y++) {
    for (q=fq;q<=lq;q++) {
