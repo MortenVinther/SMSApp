@@ -672,7 +672,8 @@ ui <- navbarPage(title = "SMS",
                                   choices = pp_short$new,
                                   selected = filter(pp_short, group %in% c("Other predators","VPA.pred","VPA.prey"))$new,
                                   inline = FALSE
-                                )
+                                ),
+                                radioButtons(inputId="linkCol",label='Links color',choices = c('none', 'by prey','by predator')) ## Added VT
                          ),
                          column(9,br(),sankeyNetworkOutput(outputId ="FoodWeb_plot",height = "700px")),
                          downloadButton(outputId = "downFoodWeb", label = "Download the plot")
@@ -829,7 +830,7 @@ ui <- navbarPage(title = "SMS",
    output$whoEats_plot <- renderPlot({whoPlot<<-plot_who_eats(res$rv$out$detail_eaten,pred=input$whoPred,prey=input$whoPrey,predPrey=input$"whoPredPrey",
                                                      years=c(input$firstYwho,input$lastYwho),exclHumans=(input$whoHuman=='Excl. catch'));whoPlot})
    
-   output$FoodWeb_plot <- renderSankeyNetwork({foodWebPlot<<-FoodWeb_plot(res$rv$out$detail_eaten,year=input$yearFoodWeb,incl_sp=input$foodWebSp );foodWebPlot})
+   output$FoodWeb_plot <- renderSankeyNetwork({foodWebPlot<<-FoodWeb_plot(res$rv$out$detail_eaten,year=input$yearFoodWeb,incl_sp=input$foodWebSp,link_col=input$linkCol );foodWebPlot})
  
   # to get full functionality with respect to drag and click. does not improve much and I don't know how to solve it!
   # output$FoodWeb_plot <- renderSankeyNetwork({foodWebPlot<<-FoodWeb_plot(res$rv$out$detail_eaten,year=input$yearFoodWeb,incl_sp=input$foodWebSp)

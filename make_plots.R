@@ -203,7 +203,7 @@ plot_who_eats<-function(x,pred,prey,predPrey='by prey',years=c(0,5000),exclHuman
 
 
 
-FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,height=NULL,margin=NULL,MyPalette=c('red','blue'),incl_sp='Cod') {
+FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,height=NULL,margin=NULL,MyPalette=c('red','blue'),incl_sp='Cod', link_col='none') {
   
   x<-bind_rows(histEaten,x)
  
@@ -237,6 +237,7 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
   
   ColourScal <- paste0('d3.scaleOrdinal() .range([', ii,'])')
   
+  if (link_col=='none') linkgr <- NULL else if(link_col=='by prey') linkgr <- "source" else linkgr <- "target"
 
   # Make the Network
   p<-sankeyNetwork(Links = x, Nodes = nodes,
@@ -245,7 +246,8 @@ FoodWeb_plot <-function(x,pred,prey,predPrey='by prey',year=2000,width=NULL,heig
                    sinksRight=FALSE, 
                    units='kt',width=width,height=height,margin=margin,
                    # iterations = 0, # this will give the same layout (as defined by order of the nodes) for all years, 
-                   #colourScale=ColourScal, 
+                   #colourScale=ColourScal,
+                   LinkGroup=linkgr, ## VT added
                    nodeWidth=35, fontSize=12, nodePadding=10)
   #saveWidget(p, file=file.path( paste0("sankey_",year,".html")))
   return(p)
